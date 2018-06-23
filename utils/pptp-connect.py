@@ -81,3 +81,8 @@ if __name__ == "__main__":
     conn.connectPPTP(username, password)
     sleep(100)
     conn.disconnectPPTP()
+
+#keywords/phraes to search for connection status:
+#Connect: -> connecting
+#Modem hangup -> hanging up
+#Connection Terminated -> connection terminated
