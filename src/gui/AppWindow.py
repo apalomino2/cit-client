@@ -22,7 +22,7 @@ class AppWindow(Gtk.ApplicationWindow):
         self.windowBox = Gtk.Box(spacing=5)
 
         # Labels
-        self.PPTPStateLabel = Gtk.Label("PPTP Connection State: ")
+        self.stateLabel = Gtk.Label("Sample Label")
 
         # Initialization
         self.initializeContainers()
@@ -35,5 +35,4 @@ class AppWindow(Gtk.ApplicationWindow):
     def initializeContainers(self):
         self.add(self.windowBox)
 
-        self.windowBox.pack_start(self.PPTPStateLabel, True, True, 5)
-        #self.windowBox.pack_end(self.actionEventBox, True, True, PADDING)
+        self.windowBox.pack_end(self.stateLabel, True, True, 5)

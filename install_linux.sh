@@ -2,8 +2,8 @@
 
 #environment variables have default values, but should be set before calling the installer
 if [ -z "$VENV_NAME" ]; then
-    echo "Warning: VENV_NAME was not set, using: creator-container" 
-    VENV_NAME=pptp-monitor-container
+    echo "Warning: VENV_NAME was not set, using: app-container" 
+    VENV_NAME=app-container
 fi
 
 pip install virtualenv
@@ -26,18 +26,18 @@ pip install vext.gi
 
 
 #Generate the script 
-echo "#!/usr/bin/env bash" > start_pptp_monitor.sh
-echo "#The name of the container used during installation" >> start_pptp_monitor.sh
-echo VENV_NAME=$VENV_NAME >> start_pptp_monitor.sh
-echo >> start_pptp_monitor.sh
-echo "#Activate the container and invoke the gui" >> start_pptp_monitor.sh
-echo source ./$VENV_NAME/bin/activate >> start_pptp_monitor.sh
-echo "#These variables are set based on their values when the install script is executed. Re-set values as needed." >> start_pptp_monitor.sh
-echo cd src >> start_pptp_monitor.sh
-echo python main.py >> start_pptp_monitor.sh
+echo "#!/usr/bin/env bash" > start.sh
+echo "#The name of the container used during installation" >> start.sh
+echo VENV_NAME=$VENV_NAME >> start.sh
+echo >> start.sh
+echo "#Activate the container and invoke the gui" >> start.sh
+echo source ./$VENV_NAME/bin/activate >> start.sh
+echo "#These variables are set based on their values when the install script is executed. Re-set values as needed." >> start.sh
+echo cd src >> start.sh
+echo python main.py >> start.sh
 
-chmod 755 start_pptp_monitor.sh
+chmod 755 start.sh
 echo
 echo
-echo Type: ./start_pptp_monitor.sh to start the GUI
+echo Type: ./start.sh to start the application
 

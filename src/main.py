@@ -10,7 +10,7 @@ class Application(Gtk.Application):
 
     def __init__(self, *args, **kwargs):
         logging.debug("Creating Application")
-        super(Application, self).__init__(*args, application_id="main",
+        super(Application, self).__init__(*args, application_id="application.main",
                          flags=Gio.ApplicationFlags.FLAGS_NONE,
                          **kwargs)
         self.window = None
@@ -21,7 +21,7 @@ class Application(Gtk.Application):
     def do_activate(self):
         Gtk.Application.do_activate(self)
         if not self.window:
-            self.window = AppWindow(application=self, title="Workshop Creator GUI")
+            self.window = AppWindow(application=self, title="Emubox Remote Client")
         self.window.present()
         self.window.show_all()
 
