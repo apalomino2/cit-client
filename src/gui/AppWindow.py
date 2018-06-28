@@ -17,7 +17,7 @@ class AppWindow(Gtk.ApplicationWindow):
     def __init__(self, *args, **kwargs):
         logging.debug("Creating AppWindow")
         super(AppWindow, self).__init__(*args, **kwargs)
-        self.set_default_size(250, 180)
+        self.set_default_size(220, 180)
         self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(5)
@@ -27,6 +27,7 @@ class AppWindow(Gtk.ApplicationWindow):
 
         self.listbox = Gtk.ListBox()
         self.listbox.set_selection_mode(Gtk.SelectionMode.NONE)
+        self.listbox.set_border_width(10)
         self.box_outer.pack_start(self.listbox, True, True, 0)
 
         self.row = Gtk.ListBoxRow()
@@ -38,20 +39,25 @@ class AppWindow(Gtk.ApplicationWindow):
         self.connStatusDescLabel = Gtk.Label("Emubox Connection Status: ", xalign=0)
         self.vbox.pack_start(self.connStatusDescLabel, True, True, 0)
 
-        self.connStatusLabel = Gtk.Label("Disconnected", xalign=0)
-        self.hbox.pack_start(self.connStatusLabel, False, True, 0)
+        self.connStatusLabel = Gtk.Label(" Disconnected ", xalign=0)
+        self.connEventBox = Gtk.EventBox()
+        self.connEventBox.add(self.connStatusLabel)
+        self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
+        self.hbox.pack_start(self.connEventBox , False, True, 0)
         self.connectionButton = Gtk.Button("Connect")
         self.connectionButton.connect("clicked", self.changeConnState)
         self.connectionButton.props.valign = Gtk.Align.CENTER
         self.hbox.pack_start(self.connectionButton, False, True, 0)
-
         self.listbox.add(self.row)
 
         self.row = Gtk.ListBoxRow()
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.row.add(self.hbox)
-        self.label = Gtk.Label("Enable Automatic Update", xalign=0)
+        self.label = Gtk.Label("Automatic Reconnect", xalign=0)
         self.check = Gtk.CheckButton()
+        #disable for now
+        self.check.set_sensitive(False)
+
         self.hbox.pack_start(self.label, True, True, 0)
         self.hbox.pack_start(self.check, False, True, 0)
 
@@ -60,13 +66,6 @@ class AppWindow(Gtk.ApplicationWindow):
         self.row = Gtk.ListBoxRow()
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.row.add(self.hbox)
-        self.label = Gtk.Label("Date Format", xalign=0)
-        self.combo = Gtk.ComboBoxText()
-        self.combo.insert(0, "0", "24-hour")
-        self.combo.insert(1, "1", "AM/PM")
-        self.hbox.pack_start(self.label, True, True, 0)
-        self.hbox.pack_start(self.combo, False, True, 0)
-
         self.listbox.add(self.row)
 
         self.listbox_2 = Gtk.ListBox()
@@ -97,12 +96,15 @@ class AppWindow(Gtk.ApplicationWindow):
             response = loginDialog.run()
             if response == Gtk.ResponseType.OK:
                 button.set_label("Disconnect")
-                self.connStatusLabel.set_label("Connected")
+                self.connStatusLabel.set_label(" Connected ")
+                self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
             elif response == Gtk.ResponseType.CANCEL:
                 {}
             loginDialog.destroy()
 
         else:
             button.set_label("Connect")
-            self.connStatusLabel.set_label("Disconnected")
+            self.connStatusLabel.set_label(" Disconnected ")
+            self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
+
 
