@@ -14,6 +14,8 @@ source ./$VENV_NAME/bin/activate
 apt-get install python-gi
 apt-get install python-pip
 apt-get install libgirepository1.0-dev
+apt-get install libdbus-1-dev
+apt-get install python-dbus
 
 pip install virtualenv
 virtualenv $VENV_NAME
@@ -23,7 +25,7 @@ source ./$VENV_NAME/bin/activate
 pip install pygobject
 pip install vext
 pip install vext.gi
-
+pip install python-networkmanager
 
 #Generate the script 
 echo "#!/usr/bin/env bash" > start.sh
