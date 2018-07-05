@@ -50,7 +50,7 @@ class VMManageBox(Gtk.ListBox):
         self.row.add(self.hbox)
         self.vmNameDescLabel = Gtk.Label("Virtual Machine Name:", xalign=0)
         self.vmNameLabel = Gtk.Label("")
-        self.vmNameLabel.set_markup("<i>Not ConfiguredAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA</i>")
+        self.vmNameLabel.set_markup("<i>Not Configured</i>")
 
         self.vmActionHBox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=10)
 
