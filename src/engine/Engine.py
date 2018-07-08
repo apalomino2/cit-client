@@ -4,6 +4,7 @@ import logging
 import shlex
 import argparse
 import sys
+from Connectivity import Connectivity
 
 class Engine:
     __instance = None
@@ -22,8 +23,8 @@ class Engine:
         else:
             Engine.__instance = self
             #setup other class specific objects
-            conns = []
-            vms = []
+            self.conns = {}
+            self.vms = {}
 
             #build the parser
             self.buildParser()
@@ -35,6 +36,19 @@ class Engine:
 
     def pptpStartCmd(self, args):
         logging.debug("pptpStartCmd(): instantiated")
+
+        if args.connName not in self.conns:
+            c = Connectivity(connectionName = args.connName)
+        else:
+            c = self.conns[args.connName]
+            logging.info("PPTP connection already exists, checking status")
+            s = c.getStatus()["connStatus"]
+            if s != Connectivity.NOT_CONNECTED:
+                logging.info("PPTP connection status: " + s + " connection busy")
+                return -1
+        #if we're good up to this point, we can connect
+        c.connectPPTP(args.ipAddr, args.username, args.password)
+        logging.info("PPTP connection signal sent: " + args.ipAddr + " " + args.username + " " + " " + args.password)
 
     def pptpStopCmd(self, args):
         logging.debug("pptpStopCmd(): instantiated")
@@ -65,7 +79,7 @@ class Engine:
 
     # -----------pptp
         self.pptpStatusParser = self.connectivitySubParsers.add_parser('status', help='retrieve connection status')
-        self.pptpStatusParser.add_argument('<connection name>',
+        self.pptpStatusParser.add_argument('connName', metavar='<connection name>',
                                            help='name of connection to retrieve status')
         self.pptpStatusParser.set_defaults(func=self.pptpStatusCmd)
 
