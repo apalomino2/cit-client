@@ -42,6 +42,9 @@ class Engine:
     def vmManageStatusCmd(self, args):
         logging.debug("vmManageStatusCmd(): instantiated")
 
+    def vmConfigCmd(self, args):
+        logging.debug("vmConfigCmd(): instantiated")
+
     def vmManageStartCmd(self, args):
         logging.debug("vmManageStartCmd(): instantiated")
 
@@ -91,6 +94,20 @@ class Engine:
                                            help='name of vm to retrieve status')
         self.vmStatusParser.set_defaults(func=self.vmManageStatusCmd)
 
+        self.vmConfigParser = self.vmManageSubParsers.add_parser('config', help='configure vm to connect to emubox')
+        self.vmConfigParser.add_argument('vmName', metavar='<vm name>', action="store",
+                                          help='name vm to configure')
+        self.vmConfigParser.add_argument('srcIPAddr', metavar='<source ip address>', action="store",
+                                          help='source IP used for UDP Tunnel')
+        self.vmConfigParser.add_argument('destIPAddr', metavar='<destination ip address>', action="store",
+                                          help='destination IP used for UDP Tunnel')
+        self.vmConfigParser.add_argument('srcPort', metavar='<source port>', action="store",
+                                          help='source port used for UDP Tunnel')
+        self.vmConfigParser.add_argument('destPort', metavar='<destination port>', action="store",
+                                          help='destination port used for UDP Tunnel')
+        self.vmConfigParser.add_argument('adaptorNum', metavar='<adaptor number>', action="store",
+                                          help='adaptor to use for UDP Tunnel configuration')
+        self.vmConfigParser.set_defaults(func=self.vmConfigCmd)
 
         self.vmStartParser = self.vmManageSubParsers.add_parser('start', help='start a vm')
         self.vmStartParser.add_argument('vmName', metavar='<vm name>', action="store",
@@ -109,23 +126,6 @@ class Engine:
         r.func(r)
 
         #self.parser.parse_args(shlex.split(cmd))
-
-
-    def getUsage(self):
-        return """
-Usage:
-engine help
-engine status
-
-pptp start <ip-address> <conn-name> <username> <password>
-pptp stop <conn-name>
-pptp status <conn-name>
- 
-vm config <vm-name> <src-ip-address> <dst-ip-address> [src-port] [dst-port] [adaptor#]
-vm status <vm-name>
-vm start <vm-name>
-vm suspend <vm-name>
-"""
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
