@@ -3,7 +3,7 @@
 import logging
 import shlex
 import argparse
-import sys
+from time import sleep
 from Connectivity.Connectivity import Connectivity
 
 class Engine:
@@ -28,31 +28,55 @@ class Engine:
 
             #build the parser
             self.buildParser()
-    def engineStatusCmd(self, args):
-        logging.debug("engineStatusCmd(): instantiated")
 
     def pptpStatusCmd(self, args):
         logging.debug("pptpStatusCmd(): instantiated")
+        if args.connName not in self.conns:
+            logging.error("Connection does not exist or was not created through the engine")
+            return -1
+        #if we're good up to this point, run the command
+        c = self.conns[args.connName]
+        return c.getStatus() # returns {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP}
+
 
     def pptpStartCmd(self, args):
         logging.debug("pptpStartCmd(): instantiated")
 
         if args.connName not in self.conns:
             c = Connectivity(connectionName = args.connName)
+            self.conns[args.connName] = c
         else:
             c = self.conns[args.connName]
-            logging.info("PPTP connection already exists, checking status")
+            logging.debug("PPTP connection exists, checking status")
             s = c.getStatus()["connStatus"]
             if s != Connectivity.NOT_CONNECTED:
-                logging.info("PPTP connection status: " + s + " connection busy")
+                logging.error("PPTP connection status: " + str(s) + " connection busy")
                 return -1
-        #if we're good up to this point, we can connect
+        #if we're good up to this point, attempt to connect
         c.connectPPTP(args.ipAddr, args.username, args.password)
         logging.info("PPTP connection signal sent: " + args.ipAddr + " " + args.username + " " + " " + args.password)
         return 0
 
     def pptpStopCmd(self, args):
         logging.debug("pptpStopCmd(): instantiated")
+        if args.connName not in self.conns:
+            logging.error("Connection does not exist or was not created through the engine")
+            return -1
+        else:
+            c = self.conns[args.connName]
+            logging.debug("PPTP connection exists, checking status")
+            s = c.getStatus()["connStatus"]
+            if s != Connectivity.CONNECTED:
+                logging.error("PPTP connection status: " + str(s) + " not connected, try again later")
+                return -1
+        #if we're good up to this point, attempt to disconnect
+        c.disconnectPPTP()
+        logging.info("PPTP stop connection signal sent: " + args.connName)
+        return 0
+
+
+    def engineStatusCmd(self, args):
+        logging.debug("engineStatusCmd(): instantiated")
 
     def vmManageStatusCmd(self, args):
         logging.debug("vmManageStatusCmd(): instantiated")
@@ -139,7 +163,7 @@ class Engine:
         logging.debug("Received: " + str(cmd))
         r = self.parser.parse_args(shlex.split(cmd))
         #r = self.parser.parse_args(cmd)
-        r.func(r)
+        return r.func(r)
 
         #self.parser.parse_args(shlex.split(cmd))
 
@@ -159,4 +183,25 @@ if __name__ == "__main__":
     logging.debug("engine object: " + str(e))
 
     #e.execute(sys.argv[1:])
-    e.execute("pptp start mypptp 11.0.0.101 test3 test3")
+    e.execute("pptp start mypptp 11.0.0.100 test3 test3")
+    res = e.execute("pptp status mypptp")
+    print "STATUS: " + str(res)
+
+    sleep(1)
+    e.execute("pptp status mypptp")
+    print "STATUS: " + str(res)
+
+    sleep(1)
+    e.execute("pptp status mypptp")
+    res = e.execute("pptp status mypptp")
+    print "STATUS: " + str(res)
+
+    sleep(5)
+    res = e.execute("pptp status mypptp")
+    print "STATUS: " + str(res)
+    e.execute("pptp stop mypptp")
+
+    sleep(5)
+    res = e.execute("pptp status mypptp")
+    print "STATUS: " + str(res)
+
