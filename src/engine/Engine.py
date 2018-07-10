@@ -4,7 +4,7 @@ import logging
 import shlex
 import argparse
 import sys
-from Connectivity import Connectivity
+from Connectivity.Connectivity import Connectivity
 
 class Engine:
     __instance = None
@@ -49,6 +49,7 @@ class Engine:
         #if we're good up to this point, we can connect
         c.connectPPTP(args.ipAddr, args.username, args.password)
         logging.info("PPTP connection signal sent: " + args.ipAddr + " " + args.username + " " + " " + args.password)
+        return 0
 
     def pptpStopCmd(self, args):
         logging.debug("pptpStopCmd(): instantiated")
@@ -136,7 +137,8 @@ class Engine:
     def execute(self, cmd):
         #parse out the command
         logging.debug("Received: " + str(cmd))
-        r = self.parser.parse_args(cmd)
+        r = self.parser.parse_args(shlex.split(cmd))
+        #r = self.parser.parse_args(cmd)
         r.func(r)
 
         #self.parser.parse_args(shlex.split(cmd))
@@ -156,4 +158,5 @@ if __name__ == "__main__":
     e = Engine.getInstance()
     logging.debug("engine object: " + str(e))
 
-    e.execute(sys.argv[1:])
+    #e.execute(sys.argv[1:])
+    e.execute("pptp start mypptp 11.0.0.101 test3 test3")
