@@ -1,5 +1,5 @@
 import logging
-from gui.Widgets.ConnectivityBox import ConnectivityBox
+from gui.Widgets.Connection import ConnectionBox
 from gui.Widgets.VMManageBox import VMManageBox
 
 import gi; gi.require_version('Gtk', '3.0')
@@ -19,8 +19,8 @@ class AppWindow(Gtk.ApplicationWindow):
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.add(self.box_outer)
 
-        self.connectivityBox = ConnectivityBox(self)
-        self.box_outer.pack_start(self.connectivityBox, True, True, 0)
+        self.connectionBox = ConnectionBox(self)
+        self.box_outer.pack_start(self.connectionBox, True, True, 0)
 
         self.vmManageBox = VMManageBox(self)
         self.box_outer.pack_start(self.vmManageBox, True, True, 0)

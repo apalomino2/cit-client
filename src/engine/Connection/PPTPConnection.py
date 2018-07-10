@@ -1,31 +1,17 @@
 #!/usr/bin/env python
 
 from subprocess import Popen, PIPE
+from Connection import Connection
 from sys import argv, platform
 import logging
 import shlex
 import threading
 from time import sleep
 
-class Connectivity:
-    NOT_CONNECTED = 0
-    CONNECTING = 1
-    CONNECTED = 2
-    NOT_DISCONNECTING = 3
-    DISCONNECTING = 4
+class PPTPConnection(Connection):
 
     def __init__(self, connectionName):
-        if platform == "linux" or platform == "linux2":
-            self.POSIX = True
-
-        self.connectAttemptTimeout = 5
-
-        self.connectionName = connectionName
-        self.connStatus = Connectivity.NOT_CONNECTED
-        self.disConnStatus = Connectivity.NOT_DISCONNECTING
-        self.serverIP = None
-        self.username = ""
-        self.password = ""
+        Connection.__init__(self, connectionName)
 
     def connProcess(self, cmd):
 
@@ -50,18 +36,18 @@ class Connectivity:
                             remoteAddressSet = True
                         if localAddressSet and remoteAddressSet:
                             logging.debug("connProcess(): Connection Established")
-                            self.connStatus = Connectivity.CONNECTED
+                            self.connStatus = Connection.CONNECTED
                 logging.debug("connProcess(): Connection Closed")
                 logging.info("Process completed: " + cmd)
 
-                self.connStatus = Connectivity.NOT_CONNECTED
+                self.connStatus = Connection.NOT_CONNECTED
             else:
                 logging.error("Platform is not linux or linux2")
                 print("Sorry your platform is not supported")
 
         except Exception as x:
             logging.error(" connProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
-            self.disconnectPPTP()
+            self.disconnect()
             if p != None and p.poll() == None:
                 p.terminate()
 
@@ -81,9 +67,9 @@ class Connectivity:
                         logging.debug("disconnProcess(): stdout Line: " + out)
 
                 logging.info("Process completed: " + cmd)
-                self.disConnStatus = Connectivity.NOT_DISCONNECTING
+                self.disConnStatus = Connection.NOT_DISCONNECTING
 
-                self.connStatus = Connectivity.NOT_CONNECTED
+                self.connStatus = Connection.NOT_CONNECTED
                 self.serverIP = None
                 self.username = ""
                 self.password = ""
@@ -98,13 +84,13 @@ class Connectivity:
                 " disconnProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
             if p != None and p.poll() == None:
                 p.terminate()
-                self.disConnStatus = Connectivity.NOT_DISCONNECTING
+                self.disConnStatus = Connection.NOT_DISCONNECTING
 
-    def connectPPTP(self, serverIP, username, password):
+    def connect(self, serverIP, username, password):
         logging.info("Using: " + username + "/" + password)
         if self.POSIX:
             logging.debug("Starting pptp connection thread")
-            self.connStatus = Connectivity.CONNECTING
+            self.connStatus = Connection.CONNECTING
             self.serverIP = serverIP
             # test command is:
             # pptpsetup --create pptpccaa --server 11.0.0.100 --username test3 --password test3 --encrypt --start
@@ -112,11 +98,11 @@ class Connectivity:
             t = threading.Thread(target=self.connProcess, args=(connCmd,))
             t.start()
 
-    def disconnectPPTP(self):
-        logging.debug(" disconnectPPTP(): initiated")
+    def disconnect(self):
+        logging.debug(" disconnect(): initiated")
         if self.POSIX:
             logging.debug("Shutting down pptp connection thread")
-            self.connStatus = Connectivity.DISCONNECTING
+            self.connStatus = Connection.DISCONNECTING
             # test command is:
             # pptpsetup --create pptpccaa --server 11.0.0.100 --username test3 --password test3 --encrypt --start
             closeConnCmd = "poff " + self.connectionName
@@ -132,23 +118,23 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
 
-    conn = Connectivity(connectionName = "testpptp")
+    conn = Connection(connectionName = "testpptp")
     serverIP = "11.0.0.100"
     username = "test3"
     password = "test3"
 
-    logging.debug("Calling connectionPPTP()")
-    conn.connectPPTP(serverIP, username, password)
+    logging.debug("Calling connection()")
+    conn.connect(serverIP, username, password)
     logging.debug("Status: " + str(conn.getStatus()))
-    while conn.getStatus()["connStatus"] != Connectivity.CONNECTED:
+    while conn.getStatus()["connStatus"] != Connection.CONNECTED:
         logging.debug("Connection not established, trying again in 5 seconds")
         sleep(5)
-        if conn.getStatus()["connStatus"] == Connectivity.NOT_CONNECTED:
-            conn.connectPPTP(serverIP, username, password)
+        if conn.getStatus()["connStatus"] == Connection.NOT_CONNECTED:
+            conn.connect(serverIP, username, password)
     sleep(5)
     logging.debug("Status: " + str(conn.getStatus()))
-    logging.debug("Calling disconnectPPTP()")
-    conn.disconnectPPTP()
+    logging.debug("Calling disconnect()")
+    conn.disconnect()
     sleep(5)
     logging.debug("Status: " + str(conn.getStatus()))
     logging.debug("Complete")

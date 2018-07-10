@@ -10,11 +10,11 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
         self.data = data
         self.add(Gtk.Label(data))
 
-class ConnectivityBox(Gtk.ListBox):
+class ConnectionBox(Gtk.ListBox):
 
     def __init__(self, parent):
-        super(ConnectivityBox, self).__init__()
-        logging.debug("Creating ConnectivityBox")
+        super(ConnectionBox, self).__init__()
+        logging.debug("Creating ConnectionBox")
         self.parent = parent
         self.set_selection_mode(Gtk.SelectionMode.NONE)
         self.set_border_width(10)
@@ -23,7 +23,7 @@ class ConnectivityBox(Gtk.ListBox):
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.row.add(self.hbox)
         self.connectionBoxDescLabel = Gtk.Label(xalign=0)
-        self.connectionBoxDescLabel.set_markup("<b>Emubox Connectivity</b>")
+        self.connectionBoxDescLabel.set_markup("<b>Emubox Connection</b>")
         self.hbox.pack_start(self.connectionBoxDescLabel, True, True, 0)
         self.add(self.row)
 

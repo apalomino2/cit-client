@@ -3,8 +3,10 @@
 import logging
 import shlex
 import argparse
+import sys
 from time import sleep
-from Connectivity.Connectivity import Connectivity
+from Connection.Connection import Connection
+from Connection.PPTPConnection import PPTPConnection
 
 class Engine:
     __instance = None
@@ -43,17 +45,17 @@ class Engine:
         logging.debug("pptpStartCmd(): instantiated")
 
         if args.connName not in self.conns:
-            c = Connectivity(connectionName = args.connName)
+            c = PPTPConnection(connectionName = args.connName)
             self.conns[args.connName] = c
         else:
             c = self.conns[args.connName]
             logging.debug("PPTP connection exists, checking status")
             s = c.getStatus()["connStatus"]
-            if s != Connectivity.NOT_CONNECTED:
+            if s != Connection.NOT_CONNECTED:
                 logging.error("PPTP connection status: " + str(s) + " connection busy")
                 return -1
         #if we're good up to this point, attempt to connect
-        c.connectPPTP(args.ipAddr, args.username, args.password)
+        c.connect(args.ipAddr, args.username, args.password)
         logging.info("PPTP connection signal sent: " + args.ipAddr + " " + args.username + " " + " " + args.password)
         return 0
 
@@ -66,17 +68,26 @@ class Engine:
             c = self.conns[args.connName]
             logging.debug("PPTP connection exists, checking status")
             s = c.getStatus()["connStatus"]
-            if s != Connectivity.CONNECTED:
+            if s != Connection.CONNECTED:
                 logging.error("PPTP connection status: " + str(s) + " not connected, try again later")
                 return -1
         #if we're good up to this point, attempt to disconnect
-        c.disconnectPPTP()
+        c.disconnect()
         logging.info("PPTP stop connection signal sent: " + args.connName)
         return 0
 
-
     def engineStatusCmd(self, args):
         logging.debug("engineStatusCmd(): instantiated")
+        connsStatus = []
+        vmsStatus = []
+
+        for conn in self.conns:
+            connsStatus.append("Connection: " + str(self.conns[conn].getStatus()))
+        for vm in self.vms:
+            vmsStatus.append("VM: " + str(self.vms[vm].getStatus()))
+
+        return "\r\nConnections: \r\n" + str(connsStatus) + "\r\nVMs:\r\n" + str(vmsStatus)
+
 
     def vmManageStatusCmd(self, args):
         logging.debug("vmManageStatusCmd(): instantiated")
@@ -98,17 +109,17 @@ class Engine:
         self.engineParser.add_argument('status', help='retrieve engine status')
         self.engineParser.set_defaults(func=self.engineStatusCmd)
 
-# -----------Connectivity
-        self.connectivityParser = self.subParsers.add_parser('pptp')
-        self.connectivitySubParsers = self.connectivityParser.add_subparsers(help='manage pptp connections')
+# -----------Connection
+        self.connectionParser = self.subParsers.add_parser('pptp')
+        self.connectionSubParsers = self.connectionParser.add_subparsers(help='manage pptp connections')
 
     # -----------pptp
-        self.pptpStatusParser = self.connectivitySubParsers.add_parser('status', help='retrieve connection status')
+        self.pptpStatusParser = self.connectionSubParsers.add_parser('status', help='retrieve connection status')
         self.pptpStatusParser.add_argument('connName', metavar='<connection name>',
                                            help='name of connection to retrieve status')
         self.pptpStatusParser.set_defaults(func=self.pptpStatusCmd)
 
-        self.pptpStartParser = self.connectivitySubParsers.add_parser('start', help='start pptp connection')
+        self.pptpStartParser = self.connectionSubParsers.add_parser('start', help='start pptp connection')
         self.pptpStartParser.add_argument('connName', metavar='<connection name>', action="store",
                                           help='name of connection')
         self.pptpStartParser.add_argument('ipAddr', metavar='<ip address>', action="store",
@@ -119,7 +130,7 @@ class Engine:
                                           help='password for pptp connection')
         self.pptpStartParser.set_defaults(func=self.pptpStartCmd)
 
-        self.pptpStopParser = self.connectivitySubParsers.add_parser('stop', help='stop an active pptp connection')
+        self.pptpStopParser = self.connectionSubParsers.add_parser('stop', help='stop an active pptp connection')
         self.pptpStopParser.add_argument('connName', metavar='<connection name>', action="store",
                                          help='name of connection to stop')
         self.pptpStopParser.set_defaults(func=self.pptpStopCmd)
@@ -188,11 +199,13 @@ if __name__ == "__main__":
     print "STATUS: " + str(res)
 
     sleep(1)
-    e.execute("pptp status mypptp")
+    res = e.execute("engine status")
+    print "ENGINE STATUS: " + str(res)
+
+    res = e.execute("pptp status mypptp")
     print "STATUS: " + str(res)
 
     sleep(1)
-    e.execute("pptp status mypptp")
     res = e.execute("pptp status mypptp")
     print "STATUS: " + str(res)
 
