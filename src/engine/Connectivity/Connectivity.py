@@ -6,13 +6,12 @@ import logging
 import shlex
 import threading
 from time import sleep
-import sys
 
 class Connectivity:
     NOT_CONNECTED = 0
     CONNECTING = 1
     CONNECTED = 2
-    NOT_DISCONNECTING =3
+    NOT_DISCONNECTING = 3
     DISCONNECTING = 4
 
     def __init__(self, connectionName):
@@ -106,9 +105,10 @@ class Connectivity:
         if self.POSIX:
             logging.debug("Starting pptp connection thread")
             self.connStatus = Connectivity.CONNECTING
+            self.serverIP = serverIP
             # test command is:
             # pptpsetup --create pptpccaa --server 11.0.0.100 --username test3 --password test3 --encrypt --start
-            connCmd = "timeout " + str(self.connectAttemptTimeout) + " pptpsetup --create " + self.connectionName + " --server " + serverIP + " --username " + username + " --password " + password + " --encrypt --start"
+            connCmd = "timeout " + str(self.connectAttemptTimeout) + " pptpsetup --create " + self.connectionName + " --server " + self.serverIP + " --username " + username + " --password " + password + " --encrypt --start"
             t = threading.Thread(target=self.connProcess, args=(connCmd,))
             t.start()
 
@@ -124,6 +124,7 @@ class Connectivity:
             t.start()
 
     def getStatus(self):
+        logging.debug( "getStatus(): instantiated")
         return {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP}
 
 
@@ -152,7 +153,3 @@ if __name__ == "__main__":
     logging.debug("Status: " + str(conn.getStatus()))
     logging.debug("Complete")
 
-# keywords/phraes to search for connection status:
-# Connect: -> connecting
-# Modem hangup -> hanging up
-# Connection Terminated -> connection terminated
