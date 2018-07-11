@@ -1,5 +1,5 @@
 import logging
-from gui.Widgets.Connection import ConnectionBox
+from gui.Widgets.ConnectionBox import ConnectionBox
 from gui.Widgets.VMManageBox import VMManageBox
 
 import gi; gi.require_version('Gtk', '3.0')
