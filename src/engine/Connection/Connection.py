@@ -13,10 +13,11 @@ class Connection():
     CONNECTED = 2
     NOT_DISCONNECTING = 3
     DISCONNECTING = 4
+    POSIX = False
+    if platform == "linux" or platform == "linux2":
+        POSIX = True
 
     def __init__(self, connectionName):
-        if platform == "linux" or platform == "linux2":
-            self.POSIX = True
 
         self.connectAttemptTimeout = 5
 
@@ -26,3 +27,15 @@ class Connection():
         self.serverIP = None
         self.username = ""
         self.password = ""
+
+    #abstractmethod
+    def connect(self):
+        raise NotImplementedError()
+
+    #abstractmethod
+    def disconnect(self):
+        raise NotImplementedError()
+
+    #abstractmethod
+    def getStatus(self):
+        raise NotImplementedError()
