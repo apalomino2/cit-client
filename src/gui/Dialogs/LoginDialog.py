@@ -11,41 +11,58 @@ class LoginDialog(Gtk.Dialog):
         box = self.get_content_area()
 
         self.set_default_size(150, 100)
-        self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+        self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
 
         self.label = Gtk.Label("Login to Emubox Server")
-        self.box_main.pack_end(self.label, True, True, 0)
+        self.box_main.pack_start(self.label, True, True, 0)
 
-        self.box_serverIP = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.box_spacer01 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
+        self.box_main.pack_start(self.box_spacer01, True, True, 0)
+
+        self.box_serverIP = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         self.serverIPLabel = Gtk.Label("Server Address")
         self.box_serverIP.pack_start(self.serverIPLabel, True, True, 0)
 
-        self.box_spacer01 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
-        box.pack_end(self.box_spacer01, True, True, 0)
-
         self.serverIPEntry = Gtk.Entry()
         self.box_serverIP.pack_start(self.serverIPEntry, True, True, 0)
-        box.pack_end(self.box_serverIP, True, True, 0)
+        self.box_main.pack_start(self.box_serverIP, True, True, 0)
 
-        self.box_username = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.box_username = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         self.usernameLabel = Gtk.Label("Username")
         self.box_username.pack_start(self.usernameLabel, True, True, 0)
 
         self.usernameEntry = Gtk.Entry()
         self.box_username.pack_start(self.usernameEntry, True, True, 0)
-        box.pack_end(self.box_username, True, True, 0)
+        self.box_main.pack_start(self.box_username, True, True, 0)
 
-        self.box_password = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=6)
+        self.box_password = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
         self.passwordLabel = Gtk.Label("Password")
         self.box_password.pack_start(self.passwordLabel, True, True, 0)
 
         self.passwordEntry = Gtk.Entry()
+        self.passwordEntry.set_visibility(False)
         self.box_password.pack_start(self.passwordEntry, True, True, 0)
-        box.pack_end(self.box_password, True, True, 0)
+        self.box_main.pack_start(self.box_password, True, True, 0)
 
-
-
-
-        box.pack_end(self.box_main, True, True, 0)
+        box.pack_start(self.box_main, True, True, 0)
 
         self.show_all()
+       
+    def clearPass(self):
+        self.passwordEntry.set_text("")
+
+    def clearEntries(self):
+        self.passwordEntry.set_text("")
+        self.serverIPEntry.set_text("")
+        self.usernameEntry.set_text("")
+        self.passwordEntry.set_text("")
+
+    def getServerIPText(self):
+        return self.serverIPEntry.get_text()
+        
+    def getUsernameText(self):
+        return self.usernameEntry.get_text()
+
+    def getPasswordText(self):
+        return self.passwordEntry.get_text()
+		

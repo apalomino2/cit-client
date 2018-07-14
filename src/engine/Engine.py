@@ -170,13 +170,14 @@ class Engine:
         self.vmSuspendParser.set_defaults(func=self.vmManageSuspendCmd)
 
     def execute(self, cmd):
-        #parse out the command
-        logging.debug("Received: " + str(cmd))
-        r = self.parser.parse_args(shlex.split(cmd))
-        #r = self.parser.parse_args(cmd)
-        return r.func(r)
-
-        #self.parser.parse_args(shlex.split(cmd))
+        try:
+            #parse out the command
+            logging.debug("Received: " + str(cmd))
+            r = self.parser.parse_args(shlex.split(cmd))
+            #r = self.parser.parse_args(cmd)
+            return r.func(r)
+        except argparse.ArgumentError, exc:
+            logging.error(exc.message, '\n', exc.argument)	
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
@@ -192,6 +193,10 @@ if __name__ == "__main__":
     logging.debug("Calling Engine.getInstance()")
     e = Engine.getInstance()
     logging.debug("engine object: " + str(e))
+
+	#error should be provided
+    e.execute("pptp start mypptp")
+    res = e.execute("pptp status mypptp")
 
     #e.execute(sys.argv[1:])
     e.execute("pptp start mypptp 11.0.0.100 test3 test3")

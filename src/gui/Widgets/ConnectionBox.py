@@ -2,7 +2,9 @@ import gi; gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 import logging
 from gui.Dialogs.LoginDialog import LoginDialog
-
+from gui.Dialogs.LoginConnectingDialog import LoginConnectingDialog
+from engine.Engine import Engine
+from engine.Connection.Connection import Connection
 
 class ListBoxRowWithData(Gtk.ListBoxRow):
     def __init__(self, data):
@@ -11,6 +13,8 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
         self.add(Gtk.Label(data))
 
 class ConnectionBox(Gtk.ListBox):
+
+    CONNECTION_NAME = "emubox"
 
     def __init__(self, parent):
         super(ConnectionBox, self).__init__()
@@ -66,17 +70,43 @@ class ConnectionBox(Gtk.ListBox):
         logging.debug("changeConnState(): initiated")
         logging.debug("changeConnState(): Button Label: " + button.get_label())
         if button.get_label() == "Connect":
+            #start the login dialog
             loginDialog = LoginDialog(self.parent)
             response = loginDialog.run()
-            if response == Gtk.ResponseType.OK:
-                button.set_label("Disconnect")
-                self.connStatusLabel.set_label(" Connected ")
-                self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
-            elif response == Gtk.ResponseType.CANCEL:
-                {}
+            #get results from dialog
+            serverIPText = loginDialog.getServerIPText()
+            usernameText = loginDialog.getUsernameText()
+            passwordText = loginDialog.getPasswordText()
+            #close the dialog
             loginDialog.destroy()
+            #try to connect using supplied credentials
+            if response == Gtk.ResponseType.OK:		
+                #TODO: process the input from the login dialog -- also remember for later
+                res = self.attemptLogin(ConnectionBox.CONNECTION_NAME, serverIPText, usernameText, passwordText)
+
+                if res == Connection.CONNECTED:
+                    button.set_label("Disconnect")
+                    self.connStatusLabel.set_label(" Connected ")
+                    self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
+    
+        elif response == Gtk.ResponseType.CANCEL:
+                loginDialog.clearEntries()
+                loginDialog.destroy()
 
         else:
+            #TODO: call disconnect logic
             button.set_label("Connect")
             self.connStatusLabel.set_label(" Disconnected ")
             self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
+
+    def attemptLogin(self, connName, serverIP, username, password):
+        logging.debug("attemptLogin(): initiated")
+        #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
+        e = Engine.getInstance()
+        e.execute("pptp start " + connName + " " + serverIP + " " + username + " " + password)
+        loginConnectingDialog = LoginConnectingDialog(self.parent, connName)
+        loginConnectingDialog.run()
+        s = loginConnectingDialog.getFinalStatus()
+        loginConnectingDialog.destroy()
+        return s
+        
