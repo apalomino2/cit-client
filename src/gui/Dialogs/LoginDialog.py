@@ -41,6 +41,13 @@ class LoginDialog(Gtk.Dialog):
 
         self.passwordEntry = Gtk.Entry()
         self.passwordEntry.set_visibility(False)
+        # enter key should trigger the default action
+        self.passwordEntry.set_activates_default(True)
+        # make OK button the default
+        okButton = self.get_widget_for_response(response_id=Gtk.ResponseType.OK)
+        okButton.set_can_default(True)
+        okButton.grab_default()
+        
         self.box_password.pack_start(self.passwordEntry, True, True, 0)
         self.box_main.pack_start(self.box_password, True, True, 0)
 
