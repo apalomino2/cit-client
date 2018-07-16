@@ -7,29 +7,29 @@ import sys
 from time import sleep
 from Connection.Connection import Connection
 from Connection.PPTPConnection import PPTPConnection
+import threading
 
 class Engine:
-    __instance = None
+    __singleton_lock = threading.Lock()
+    __singleton_instance = None
 
-    @staticmethod
-    def getInstance():
-        #status access method
-        if Engine.__instance == None:
-            Engine()
-        return Engine.__instance
+    @classmethod
+    def getInstance(cls):
+        if not cls.__singleton_instance:
+            with cls.__singleton_lock:
+                if not cls.__singleton_instance:
+                    cls.__singleton_instance = cls()
+        return cls.__singleton_instance
 
     def __init__(self):
         #Virtually private constructor
-        if Engine.__instance != None:
+        if Engine.__singleton_instance != None:
             raise Exception("Use the getInstance method to obtain an instance of this class")
-        else:
-            Engine.__instance = self
-            #setup other class specific objects
-            self.conns = {}
-            self.vms = {}
+        self.conns = {}
+        self.vms = {}
 
-            #build the parser
-            self.buildParser()
+        #build the parser
+        self.buildParser()
 
     def pptpStatusCmd(self, args):
         logging.debug("pptpStatusCmd(): instantiated")
@@ -195,7 +195,7 @@ if __name__ == "__main__":
     logging.debug("engine object: " + str(e))
 
 	#error should be provided
-    e.execute("pptp start mypptp")
+    #e.execute("pptp start mypptp")
     res = e.execute("pptp status mypptp")
 
     #e.execute(sys.argv[1:])
