@@ -25,7 +25,7 @@ source ./$VENV_NAME/bin/activate
 pip install pygobject
 pip install vext
 pip install vext.gi
-pip install python-networkmanager
+pip install configparser
 
 #Generate the script 
 echo "#!/usr/bin/env bash" > start.sh
