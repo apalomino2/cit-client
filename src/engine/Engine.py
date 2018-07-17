@@ -15,6 +15,7 @@ class Engine:
 
     @classmethod
     def getInstance(cls):
+        logging.debug("getInstance() Engine: instantiated")
         if not cls.__singleton_instance:
             with cls.__singleton_lock:
                 if not cls.__singleton_instance:
@@ -170,14 +171,19 @@ class Engine:
         self.vmSuspendParser.set_defaults(func=self.vmManageSuspendCmd)
 
     def execute(self, cmd):
+        logging.debug("execute(): instantiated")
         try:
             #parse out the command
-            logging.debug("Received: " + str(cmd))
+            logging.debug("execute(): Received: " + str(cmd))
             r = self.parser.parse_args(shlex.split(cmd))
             #r = self.parser.parse_args(cmd)
+            logging.debug("execute(): returning result: " + str(r))
             return r.func(r)
+            
         except argparse.ArgumentError, exc:
             logging.error(exc.message, '\n', exc.argument)	
+        except SystemExit:
+			return
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
@@ -195,7 +201,7 @@ if __name__ == "__main__":
     logging.debug("engine object: " + str(e))
 
 	#error should be provided
-    #e.execute("pptp start mypptp")
+    e.execute("pptp start mypptp")
     res = e.execute("pptp status mypptp")
 
     #e.execute(sys.argv[1:])
