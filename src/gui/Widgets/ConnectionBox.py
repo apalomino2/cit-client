@@ -119,7 +119,7 @@ class ConnectionBox(Gtk.ListBox):
         return s
         
     def attemptDisconnect(self):
-        logging.debug("attemptLogin(): initiated")
+        logging.debug("attemptDisconnect(): initiated")
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
         e = Engine.getInstance()
         e.execute("pptp stop " + ConnectionBox.CONNECTION_NAME)
