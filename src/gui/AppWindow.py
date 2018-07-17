@@ -7,6 +7,8 @@ from gi.repository import Gtk, Gdk
 
 from engine.Engine import Engine
 from engine.Connection.Connection import Connection
+from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
+
 
 # This class contains the main window, its main container is a notebook
 class AppWindow(Gtk.ApplicationWindow):
@@ -37,7 +39,9 @@ class AppWindow(Gtk.ApplicationWindow):
         logging.debug("delete_event(): result: " + str(res))
         if res == -1:
             self.destroy()
-            return
+            #continue with any other destruction
+            logging.debug("catchClosing(): returning False")
+            return False
         result = res["connStatus"]
         if result == Connection.CONNECTING:
             closingDialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING,
@@ -48,19 +52,20 @@ class AppWindow(Gtk.ApplicationWindow):
             closingDialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING,
             Gtk.ButtonsType.OK_CANCEL, "Quit and close connection?")
             response = closingDialog.run()
-            if response == Gtk.ResponseType.OK:	
+            closingDialog.destroy()
+            if response == Gtk.ResponseType.OK:
                 logging.debug("delete_event(): opening disconnect dialog")
                 #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
                 e = Engine.getInstance()
                 e.execute("pptp stop " + ConnectionBox.CONNECTION_NAME)
-                disconnectingDialog = DisconnectingDialog(self.parent, ConnectionBox.CONNECTION_NAME)
+                disconnectingDialog = DisconnectingDialog(self, ConnectionBox.CONNECTION_NAME)
                 disconnectingDialog.run()
                 s = disconnectingDialog.getFinalStatus()
                 disconnectingDialog.destroy()
                 if s == Connection.NOT_CONNECTED:
                     self.destroy()
-                    return
                 else:
                     cannotCloseDialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING,
                         Gtk.ButtonsType.OK_CANCEL, "Could not close connection, try again later.")
-        
+        logging.debug("catchClosing(): returning True")
+        return True
