@@ -6,6 +6,8 @@ from gui.Dialogs.LoginConnectingDialog import LoginConnectingDialog
 from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
 from engine.Engine import Engine
 from engine.Connection.Connection import Connection
+import configparser
+import os
 
 class ListBoxRowWithData(Gtk.ListBoxRow):
     def __init__(self, data):
@@ -19,6 +21,7 @@ class ConnectionBox(Gtk.ListBox):
 
     def __init__(self, parent):
         super(ConnectionBox, self).__init__()
+        
         logging.debug("Creating ConnectionBox")
         self.parent = parent
         self.set_selection_mode(Gtk.SelectionMode.NONE)
@@ -91,15 +94,15 @@ class ConnectionBox(Gtk.ListBox):
                     self.connStatusLabel.set_label(" Connected ")
                     self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
     
-        elif response == Gtk.ResponseType.CANCEL:
-            #just clear out the dialog
-            loginDialog.clearEntries()
-            loginDialog.destroy()
+            elif response == Gtk.ResponseType.CANCEL:
+                #just clear out the dialog
+                loginDialog.clearEntries()
+                loginDialog.destroy()
 
         else:
             #call disconnect logic
             res = self.attemptDisconnect()
-            if res == Connection.DISCONNECTED:
+            if res == Connection.NOT_CONNECTED:
                 button.set_label("Connect")
                 self.connStatusLabel.set_label(" Disconnected ")
                 self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
@@ -120,8 +123,8 @@ class ConnectionBox(Gtk.ListBox):
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
         e = Engine.getInstance()
         e.execute("pptp stop " + ConnectionBox.CONNECTION_NAME)
-        loginDisconnectingDialog = LoginConnectingDialog(self.parent, connName)
-        loginDisconnecting.run()
-        s = loginDisconnecting.getFinalStatus()
-        loginDisconnecting.destroy()
+        disconnectingDialog = DisconnectingDialog(self.parent, ConnectionBox.CONNECTION_NAME)
+        disconnectingDialog.run()
+        s = disconnectingDialog.getFinalStatus()
+        disconnectingDialog.destroy()
         return s

@@ -1,6 +1,6 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 from engine.Engine import Engine
 from time import sleep
 import threading
@@ -42,6 +42,19 @@ class DisconnectingDialog(Gtk.Dialog):
         t = threading.Thread(target=self.watchDisconnStatus)
         t.start()
         
+    def setGUIStatus(self, msg, spin, buttonEnabled):
+        self.statusLabel.set_text(msg)
+        if spin != None:
+            if spin == True:
+                self.spinner.start()
+            else:
+                self.spinner.stop()
+        if buttonEnabled != None:
+            if buttonEnabled == True:
+                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
+            else:
+                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
+    
     def watchDisconnStatus(self):
         logging.debug("watchDisconnStatus(): instantiated")
         self.statusLabel.set_text("Checking connection")
@@ -52,16 +65,12 @@ class DisconnectingDialog(Gtk.Dialog):
             self.status = e.execute("pptp status " + self.connName)["connStatus"]
             logging.debug("watchConnStatus(): result: " + str(self.status))
             if self.status == Connection.DISCONNECTING:
-                self.statusLabel.set_text("Disconnecting...")
+                GLib.idle_add(self.setGUIStatus, "Disconnecting...", None, None)
             elif self.status == Connection.NOT_CONNECTED:
-                self.statusLabel.set_text("Disconnected.")
-                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
-                self.spinner.stop()
+                GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
                 break
             else:
-                self.statusLabel.set_text("Could not disconnect.")
-                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
-                self.spinner.stop()
+                GLib.idle_add(self.setGUIStatus, "Could not disconnect", False, True)
                 break
             sleep(1)
             

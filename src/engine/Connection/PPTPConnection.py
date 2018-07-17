@@ -51,8 +51,32 @@ class PPTPConnection(Connection):
             if p != None and p.poll() == None:
                 p.terminate()
 
-    def disconnProcess(self, cmd):
+    def removeConnProcess(self, cmd):
+        # Function for starting the process and capturing its stdout
+        try:
+            logging.debug("Starting process: " + str(cmd) + "\r\n")
+            outlog = ""
+            if self.POSIX:
+                p = Popen(shlex.split(cmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+                while True:
+                    out = p.stdout.readline()
+                    if out == '' and p.poll() != None:
+                        break
+                    if out != '':
+                        logging.debug("disconnProcess(): stdout Line: " + out)
 
+                logging.info("Process completed: " + cmd)
+            else:
+                logging.error("Platform is not linux or linux2")
+                print("Sorry your platform is not supported")
+
+        except Exception as x:
+            logging.error(
+                " disconnProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
+            if p != None and p.poll() == None:
+                p.terminate()
+
+    def disconnProcess(self, cmd):
         # Function for starting the process and capturing its stdout
         try:
             logging.debug("Starting process: " + str(cmd) + "\r\n")
@@ -105,9 +129,15 @@ class PPTPConnection(Connection):
             self.connStatus = Connection.DISCONNECTING
             # test command is:
             # pptpsetup --create pptpccaa --server 11.0.0.100 --username test3 --password test3 --encrypt --start
+            
+            #remove the connection and then stop the connect (these can be done in parallel)
+            removeConnCmd = "pptpsetup --delete " + self.connectionName
+            t1 = threading.Thread(target=self.removeConnProcess, args=(removeConnCmd,))
+            t1.start()
+            
             closeConnCmd = "poff " + self.connectionName
-            t = threading.Thread(target=self.disconnProcess, args=(closeConnCmd,))
-            t.start()
+            t2 = threading.Thread(target=self.disconnProcess, args=(closeConnCmd,))
+            t2.start()
 
     def getStatus(self):
         logging.debug( "getStatus(): instantiated")

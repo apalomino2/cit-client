@@ -1,6 +1,6 @@
 import gi
 gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk
+from gi.repository import Gtk, GLib
 from engine.Engine import Engine
 from time import sleep
 import threading
@@ -41,6 +41,20 @@ class LoginConnectingDialog(Gtk.Dialog):
         self.status = -1
         t = threading.Thread(target=self.watchConnStatus)
         t.start()
+                
+        
+    def setGUIStatus(self, msg, spin, buttonEnabled):
+        self.statusLabel.set_text(msg)
+        if spin != None:
+            if spin == True:
+                self.spinner.start()
+            else:
+                self.spinner.stop()
+        if buttonEnabled != None:
+            if buttonEnabled == True:
+                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
+            else:
+                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
         
     def watchConnStatus(self):
         logging.debug("watchConnStatus(): instantiated")
@@ -52,18 +66,17 @@ class LoginConnectingDialog(Gtk.Dialog):
             self.status = e.execute("pptp status " + self.connName)["connStatus"]
             logging.debug("watchConnStatus(): result: " + str(self.status))
             if self.status == Connection.CONNECTING:
-                self.statusLabel.set_text("Trying to establish connection")
+                GLib.idle_add(self.setGUIStatus, "Trying to establish connection", None, None)
             elif self.status == Connection.CONNECTED:
-                self.statusLabel.set_text("Connection Established.")
-                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
-                self.spinner.stop()
+                GLib.idle_add(self.setGUIStatus, "Connection Established", False, True)
                 break
             else:
-                self.statusLabel.set_text("Could not connect.")
-                self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
-                self.spinner.stop()
+                GLib.idle_add(self.setGUIStatus, "Could not connect", False, True)
                 break
             sleep(1)
+        logging.debug("watchConnStatus(): thread ending")
             
     def getFinalStatus(self):
+        logging.debug("getFinalStatus(): initiated")
+        logging.debug("getFinalStatus(): self.status: " + str(self.status))
         return self.status
