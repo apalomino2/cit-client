@@ -141,6 +141,7 @@ class PPTPConnection(Connection):
 
     def getStatus(self):
         logging.debug( "getStatus(): instantiated")
+        #Don't want to rely on python objects in case we go with 3rd party clients in the future
         return {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP}
 
 
