@@ -12,16 +12,18 @@ class VMManage:
     VM_SETUP_NONE = 1
     VM_SETUP_UNKNOWN = -1
        
-    MANAGER_QUERYING = 7
-    MANAGER_NOT_QUERYING = 8
-    MANAGER_UNKNOWN = 9
+    MANAGER_READING = 7
+    MANAGER_IDLE = 8
+    MANAGER_WRITING = 9
     
+    MANAGER_UNKNOWN = 10 
+   
     POSIX = False
     if platform == "linux" or platform == "linux2":
         POSIX = True
       
     def __init__(self):
-        self.vms = [] #list of VM()
+        self.vms = {} #dict of VM()
 
     #abstractmethod
     def configureVM(self, VMName, srcIPAddress, dstIPAddress, srcPort, dstPort):
