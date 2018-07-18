@@ -13,6 +13,9 @@ class Connection():
     CONNECTED = 2
     NOT_DISCONNECTING = 3
     DISCONNECTING = 4
+    
+    CONNECT_ATTEMPT_TIMEOUT_VAL = 5
+    
     POSIX = False
     if platform == "linux" or platform == "linux2":
         POSIX = True

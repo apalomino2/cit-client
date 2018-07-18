@@ -118,7 +118,7 @@ class PPTPConnection(Connection):
             self.serverIP = serverIP
             # test command is:
             # pptpsetup --create pptpccaa --server 11.0.0.100 --username test3 --password test3 --encrypt --start
-            connCmd = "timeout " + str(self.connectAttemptTimeout) + " pptpsetup --create " + self.connectionName + " --server " + self.serverIP + " --username " + username + " --password " + password + " --encrypt --start"
+            connCmd = "timeout " + str(Connection.CONNECT_ATTEMPT_TIMEOUT_VAL) + " pptpsetup --create " + self.connectionName + " --server " + self.serverIP + " --username " + username + " --password " + password + " --encrypt --start"
             t = threading.Thread(target=self.connProcess, args=(connCmd,))
             t.start()
 
