@@ -18,6 +18,8 @@ class VMManage:
     
     MANAGER_UNKNOWN = 10 
    
+    MANAGER_STATUS_TIMEOUT_VAL = 11
+   
     POSIX = False
     if platform == "linux" or platform == "linux2":
         POSIX = True

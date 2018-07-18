@@ -5,7 +5,7 @@ from VMManage import VMManage
 
 class VM:
     VM_STATE_RUNNING = 2
-#    VM_STATE_OFF = 3
+    VM_STATE_OFF = 3
 #    VM_STATE_SUSPENDED = 4
 #    VM_STATE_ABORTED = 5
     VM_STATE_UNKNOWN = 6
@@ -17,5 +17,5 @@ class VM:
         self.UUID = ""
         self.setupStatus = VMManage.VM_SETUP_UNKNOWN
         self.state = VM.VM_STATE_UNKNOWN
-        self.adaptorInfo = [] #list adaptors (strings)
-        self.groups = []#list groups (strings)
+        self.adaptorInfo = {} #list adaptors (strings)
+        self.groups = ""#list groups (strings)
