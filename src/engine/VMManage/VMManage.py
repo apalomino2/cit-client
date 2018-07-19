@@ -28,14 +28,32 @@ class VMManage:
         self.vms = {} #dict of VM()
 
     #abstractmethod
-    def configureVM(self, VMName, srcIPAddress, dstIPAddress, srcPort, dstPort):
-        raise NotImplementedError()
-
-    #abstractmethod
-    def refreshVMStates(self):
-        raise NotImplementedError()
-
-    #abstractmethod
     def getManagerStatus(self):
+        raise NotImplementedError()
+    
+    #abstractmethod
+    def getVMStatus(self, vmName):
+        raise NotImplementedError()
+
+    #abstractmethod
+    def refreshAllVMInfo(self):
+        raise NotImplementedError()
+
+    #abstractmethod
+    def refreshVMInfo(self):
+        raise NotImplementedError()
+
+    #abstractmethod
+    def startVM(self, vmName):
+        raise NotImplementedError()
+
+    def suspendVM(self, vmName):
+        raise NotImplementedError()
+
+    def stopVM(self, vmName):
+        raise NotImplementedError()
+
+    #abstractmethod
+    def configureVM(self, VMName, srcIPAddress, dstIPAddress, srcPort, dstPort):
         raise NotImplementedError()
 

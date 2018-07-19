@@ -19,7 +19,7 @@ class VBoxManage(VMManage):
         self.readStatus = VMManage.MANAGER_UNKNOWN
         self.writeStatus = VMManage.MANAGER_UNKNOWN
         #initial refresh
-        self.refreshAllVMInfo()
+        #self.refreshAllVMInfo()
 
     def configureVM(self, vmName, srcIPAddress, dstIPAddress, srcPort, dstPort, adaptorNum):
         logging.info("configureVM(): instantiated")
@@ -168,7 +168,6 @@ class VBoxManage(VMManage):
         self.readStatus = VMManage.MANAGER_IDLE
         logging.debug("runVMInfo(): Thread completed")
 
-
     def runConfigureVM(self, vmName, srcIPAddress, dstIPAddress, srcPort, dstPort, adaptorNum):
         logging.debug("runConfigureVM(): instantiated")
         self.writeStatus = VMManage.MANAGER_WRITING
@@ -185,6 +184,25 @@ class VBoxManage(VMManage):
         self.writeStatus = VMManage.MANAGER_IDLE
         logging.debug("runConfigure(): Thread completed")
 
+    def runVMCmd(self, cmd):
+        logging.debug("runVMCmd(): instantiated")
+        self.writeStatus = VMManage.MANAGER_WRITING
+        self.readStatus = VMManage.MANAGER_READING
+        vmCmd = "timeout " + str(VMManage.MANAGER_STATUS_TIMEOUT_VAL) + " " + VBoxManage.VBOX_PATH + " " + cmd
+        logging.debug("runConfigureVM(): Running " + vmCmd)
+        p = Popen(shlex.split(vmCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+        while True:
+            out = p.stdout.readline()
+            if out == '' and p.poll() != None:
+                break
+            if out != '':
+                logging.debug("output line: " + out)
+        p.wait()
+        
+        self.readStatus = VMManage.MANAGER_IDLE
+        self.writeStatus = VMManage.MANAGER_IDLE
+        logging.debug("runVMCmd(): Thread completed")
+
     def getVMStatus(self, vmName):
         logging.debug("getVMStatus(): instantiated " + str(vmName))
         #TODO: need to make this thread safe
@@ -194,13 +212,63 @@ class VBoxManage(VMManage):
         
     def getManagerStatus(self):
         logging.debug("getManagerStatus(): instantiated")
+        if self.readStatus == VMManage.MANAGER_UNKNOWN:
+            logging.error("No status available, you must run refreshAllVMInfo() to initialize the Manager")
         return {"readStatus" : self.readStatus, "writeStatus" : self.writeStatus}
+        
+    def startVM(self, vmName):
+        logging.debug("startVM(): instantiated")
+        if VMManage.POSIX:
+            #check to make sure the vm is known, if not should refresh or check name:
+            if vmName not in self.vms:
+                logging.error("startVM(): " + vmName + " not found in list of known vms: \r\n" + str(self.vms))
+                return -1
+            cmd = "startvm " + vmName
+            t = threading.Thread(target=self.runVMCmd, args=(cmd,))
+            t.start()
+            return 0
+        else:
+            logging.error("Platform is not linux or linux2")
+            print("Sorry your platform is not supported")
+
+    def suspendVM(self, vmName):
+        logging.debug("suspendVM(): instantiated")
+        if VMManage.POSIX:
+            #check to make sure the vm is known, if not should refresh or check name:
+            if vmName not in self.vms:
+                logging.error("suspendVM(): " + vmName + " not found in list of known vms: \r\n" + str(self.vms))
+                return -1
+            cmd = "controlvm " + vmName + " savestate"
+            t = threading.Thread(target=self.runVMCmd, args=(cmd,))
+            t.start()
+            return 0
+        else:
+            logging.error("Platform is not linux or linux2")
+            print("Sorry your platform is not supported")
+
+    def stopVM(self, vmName):
+        logging.debug("stopVM(): instantiated")
+        if VMManage.POSIX:
+            #check to make sure the vm is known, if not should refresh or check name:
+            if vmName not in self.vms:
+                logging.error("stopVM(): " + vmName + " not found in list of known vms: \r\n" + str(self.vms))
+                return -1
+            cmd = "controlvm " + vmName + " poweroff"
+            t = threading.Thread(target=self.runVMCmd, args=(cmd,))
+            t.start()
+            return 0
+        else:
+            logging.error("Platform is not linux or linux2")
+            print("Sorry your platform is not supported")
 
 if __name__ == "__main__":
-    logging.getLogger().setLevel(logging.INFO)
+    logging.getLogger().setLevel(logging.DEBUG)
     logging.info("Starting Program")
     logging.info("Instantiating VBoxManage")
     vbm = VBoxManage()
+    
+    logging.info("Status without refresh: ")
+    vbm.getManagerStatus()
     
     logging.info("Refreshing VM Info - BEFORE")
     for vm in vbm.vms:
@@ -242,5 +310,34 @@ if __name__ == "__main__":
     
     logging.info("Status for \"ubuntu-core4.7\"")
     logging.info(vbm.getVMStatus("\"ubuntu-core4.7\""))
+    exit()
+#TODO: not sure why, but if the program doesn't quit here, the changes to the nic don't occur...    
+    logging.info("----Testing VM commands-------")
+    logging.info("----Start-------")
+    vbm.startVM("\"ubuntu-core4.7\"")
+    while vbm.getManagerStatus()["readStatus"] != VMManage.MANAGER_IDLE and vbm.getManagerStatus()["writeStatus"] != VMManage.MANAGER_IDLE:
+        logging.info("waiting for manager to finish reading/writing...")
+        sleep(1)
+    logging.info("----Waiting 5 seconds to save state-------")
+    sleep(5)
+
+    vbm.suspendVM("\"ubuntu-core4.7\"")
+    while vbm.getManagerStatus()["readStatus"] != VMManage.MANAGER_IDLE and vbm.getManagerStatus()["writeStatus"] != VMManage.MANAGER_IDLE:
+        logging.info("waiting for manager to finish reading/writing...")
+        sleep(1)
+    logging.info("----Waiting 5 seconds to resume -------")
+    sleep(5)
     
+    vbm.startVM("\"ubuntu-core4.7\"")
+    while vbm.getManagerStatus()["readStatus"] != VMManage.MANAGER_IDLE and vbm.getManagerStatus()["writeStatus"] != VMManage.MANAGER_IDLE:
+        logging.info("waiting for manager to finish reading/writing...")
+        sleep(1)
+    logging.info("----Waiting 5 seconds to stop-------")
+    sleep(5)
+
+    vbm.stopVM("\"ubuntu-core4.7\"")
+    while vbm.getManagerStatus()["readStatus"] != VMManage.MANAGER_IDLE and vbm.getManagerStatus()["writeStatus"] != VMManage.MANAGER_IDLE:
+        logging.info("waiting for manager to finish reading/writing...")
+        sleep(1)
+        
     logging.info("Completed Exiting...")
