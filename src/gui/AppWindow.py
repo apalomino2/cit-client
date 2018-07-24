@@ -43,6 +43,11 @@ class AppWindow(Gtk.ApplicationWindow):
             logging.debug("catchClosing(): returning False")
             return False
         result = res["connStatus"]
+        if result == Connection.NOT_CONNECTED:
+            self.destroy()
+            #continue with any other destruction
+            logging.debug("catchClosing(): returning False")
+            return False
         if result == Connection.CONNECTING:
             closingDialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING,
             Gtk.ButtonsType.OK, "Cannot quit, connection is busy...")

@@ -7,6 +7,7 @@ import sys
 from time import sleep
 from Connection.Connection import Connection
 from Connection.PPTPConnection import PPTPConnection
+from VMManage.VBoxManage import VBoxManage
 import threading
 
 class Engine:
@@ -27,8 +28,10 @@ class Engine:
         if Engine.__singleton_instance != None:
             raise Exception("Use the getInstance method to obtain an instance of this class")
         self.conns = {}
-        self.vms = {}
-
+        configuredVMs = {}
+        self.vmManage = VBoxManage()
+        selectedVM = {"name" : "", "UUID" : ""}
+        
         #build the parser
         self.buildParser()
 
@@ -47,6 +50,7 @@ class Engine:
 
         if args.connName not in self.conns:
             c = PPTPConnection(connectionName = args.connName)
+            #have to add to list of conns because we don't know if the connection was successful until later
             self.conns[args.connName] = c
         else:
             c = self.conns[args.connName]
@@ -72,7 +76,7 @@ class Engine:
             if s != Connection.CONNECTED:
                 logging.error("PPTP connection status: " + str(s) + " not connected, try again later")
                 return -1
-        #if we're good up to this point, attempt to disconnect
+        #if we're good up to this point, attempt to disconnect and then remove from list of known connections
         c.disconnect()
         logging.info("PPTP stop connection signal sent: " + args.connName)
         return 0
@@ -86,7 +90,7 @@ class Engine:
             connsStatus.append("Connection: " + str(self.conns[conn].getStatus()))
         for vm in self.vms:
             vmsStatus.append("VM: " + str(self.vms[vm].getStatus()))
-
+        
         return "\r\nConnections: \r\n" + str(connsStatus) + "\r\nVMs:\r\n" + str(vmsStatus)
 
 

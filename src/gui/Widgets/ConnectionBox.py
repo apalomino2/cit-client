@@ -82,9 +82,17 @@ class ConnectionBox(Gtk.ListBox):
             usernameText = loginDialog.getUsernameText()
             passwordText = loginDialog.getPasswordText()
             #close the dialog
-            loginDialog.destroy()
+            loginDialog.destroy()                
             #try to connect using supplied credentials
             if response == Gtk.ResponseType.OK:		
+                #check if the input was filled
+                if serverIPText.strip() == "" or usernameText.strip() == "" or passwordText.strip() == "":
+                    logging.error("Parameter was empty!")
+                    inputErrorDialog = Gtk.MessageDialog(self.parent, 0, Gtk.MessageType.ERROR,
+                    Gtk.ButtonsType.OK, "All fields must be non-empty...")
+                    inputErrorDialog.run()
+                    inputErrorDialog.destroy()
+                    return
                 #process the input from the login dialog
                 #TODO: also remember for later
                 res = self.attemptLogin(serverIPText, usernameText, passwordText)
@@ -106,7 +114,7 @@ class ConnectionBox(Gtk.ListBox):
                 button.set_label("Connect")
                 self.connStatusLabel.set_label(" Disconnected ")
                 self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
-
+    
     def attemptLogin(self, serverIP, username, password):
         logging.debug("attemptLogin(): initiated")
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good

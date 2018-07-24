@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from subprocess import Popen, PIPE
+import subprocess
 from sys import argv, platform
 import logging
 import shlex
@@ -172,15 +173,17 @@ class VBoxManage(VMManage):
         logging.debug("runConfigureVM(): instantiated")
         self.writeStatus = VMManage.MANAGER_WRITING
         vmConfigVMCmd = "timeout " + str(VMManage.MANAGER_STATUS_TIMEOUT_VAL) + " " + VBoxManage.VBOX_PATH + " modifyvm " + str(vmName) + " --nic" + str(adaptorNum) + " generic" + " --nicgenericdrv1 UDPTunnel " + "--cableconnected" + str(adaptorNum) + " on --nicproperty" + str(adaptorNum) + " sport=" + str(srcPort) + " --nicproperty" + str(adaptorNum) + " dport=" + str(dstPort) + " --nicproperty" + str(adaptorNum) + " dest=" + str(dstIPAddress)
+        #vmConfigVMCmd = "timeout " + str(VMManage.MANAGER_STATUS_TIMEOUT_VAL) + " " + VBoxManage.VBOX_PATH + " modifyvm " + str(vmName) + " --nic" + str(adaptorNum) + " intnet", "--intnet"+str(netNum), "TEST"
         logging.debug("runConfigureVM(): Running " + vmConfigVMCmd)
-        p = Popen(shlex.split(vmConfigVMCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
-        while True:
-            out = p.stdout.readline()
-            if out == '' and p.poll() != None:
-                break
-            if out != '':
-                logging.debug("output line: " + out)
-        p.wait()
+        subprocess.check_output(vmConfigVMCmd)
+        #p = Popen(shlex.split(vmConfigVMCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+        #while True:
+        #    out = p.stdout.readline()
+        #    if out == '' and p.poll() != None:
+        #        break
+        #    if out != '':
+        #        logging.debug("output line: " + out)
+        #p.wait()
         self.writeStatus = VMManage.MANAGER_IDLE
         logging.debug("runConfigure(): Thread completed")
 
