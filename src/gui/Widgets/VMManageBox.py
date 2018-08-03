@@ -83,7 +83,7 @@ class VMManageBox(Gtk.ListBox):
         configureVMDialog = ConfigureVMDialog(self.parent)
         response = configureVMDialog.run()
         if response == Gtk.ResponseType.OK:
-            self.vmStatusLabel.set_label(" Connected ")
+            self.vmStatusLabel.set_label(" Configured ")
             self.vmStatusEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
         elif response == Gtk.ResponseType.CANCEL:
             {}
