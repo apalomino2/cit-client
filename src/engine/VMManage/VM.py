@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-from VMAdaptorInfo import VMAdaptorInfo
 from VMManage import VMManage
 
 class VM:
