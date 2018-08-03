@@ -28,7 +28,7 @@ class VBoxManage(VMManage):
         if VMManage.POSIX:
             #check to make sure the vm is known, if not should refresh or check name:
             if vmName not in self.vms:
-                logging.error("refreshVMInfo(): " + vmName + " not found in list of known vms: \r\n" + str(self.vms))
+                logging.error("configureVM(): " + vmName + " not found in list of known vms: \r\n" + str(self.vms))
                 return -1
             t = threading.Thread(target=self.runConfigureVM, args=(vmName, srcIPAddress, dstIPAddress, srcPort, dstPort, adaptorNum))
             t.start()
@@ -170,22 +170,26 @@ class VBoxManage(VMManage):
         logging.debug("runVMInfo(): Thread completed")
 
     def runConfigureVM(self, vmName, srcIPAddress, dstIPAddress, srcPort, dstPort, adaptorNum):
-        logging.debug("runConfigureVM(): instantiated")
-        self.writeStatus = VMManage.MANAGER_WRITING
-        vmConfigVMCmd = "timeout " + str(VMManage.MANAGER_STATUS_TIMEOUT_VAL) + " " + VBoxManage.VBOX_PATH + " modifyvm " + str(vmName) + " --nic" + str(adaptorNum) + " generic" + " --nicgenericdrv1 UDPTunnel " + "--cableconnected" + str(adaptorNum) + " on --nicproperty" + str(adaptorNum) + " sport=" + str(srcPort) + " --nicproperty" + str(adaptorNum) + " dport=" + str(dstPort) + " --nicproperty" + str(adaptorNum) + " dest=" + str(dstIPAddress)
-        #vmConfigVMCmd = "timeout " + str(VMManage.MANAGER_STATUS_TIMEOUT_VAL) + " " + VBoxManage.VBOX_PATH + " modifyvm " + str(vmName) + " --nic" + str(adaptorNum) + " intnet", "--intnet"+str(netNum), "TEST"
-        logging.debug("runConfigureVM(): Running " + vmConfigVMCmd)
-        subprocess.check_output(vmConfigVMCmd)
-        #p = Popen(shlex.split(vmConfigVMCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
-        #while True:
-        #    out = p.stdout.readline()
-        #    if out == '' and p.poll() != None:
-        #        break
-        #    if out != '':
-        #        logging.debug("output line: " + out)
-        #p.wait()
-        self.writeStatus = VMManage.MANAGER_IDLE
-        logging.debug("runConfigure(): Thread completed")
+        try:
+            logging.debug("runConfigureVM(): instantiated")
+            self.writeStatus = VMManage.MANAGER_WRITING
+            vmConfigVMCmd = VBoxManage.VBOX_PATH + " modifyvm " + str(vmName) + " --nic" + str(adaptorNum) + " generic" + " --nicgenericdrv1 UDPTunnel " + "--cableconnected" + str(adaptorNum) + " on --nicproperty" + str(adaptorNum) + " sport=" + str(srcPort) + " --nicproperty" + str(adaptorNum) + " dport=" + str(dstPort) + " --nicproperty" + str(adaptorNum) + " dest=" + str(dstIPAddress)
+            #vmConfigVMCmd = "timeout " + str(VMManage.MANAGER_STATUS_TIMEOUT_VAL) + " " + VBoxManage.VBOX_PATH + " modifyvm " + str(vmName) + " --nic" + str(adaptorNum) + " intnet", "--intnet"+str(netNum), "TEST"
+            logging.debug("runConfigureVM(): Running " + vmConfigVMCmd)
+            subprocess.check_output(shlex.split(vmConfigVMCmd, posix=self.POSIX))
+            #p = Popen(shlex.split(vmConfigVMCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            #while True:
+            #    out = p.stdout.readline()
+            #    if out == '' and p.poll() != None:
+            #        break
+            #    if out != '':
+            #        logging.debug("output line: " + out)
+            #p.wait()
+
+            self.writeStatus = VMManage.MANAGER_IDLE
+            logging.debug("runConfigure(): Thread completed")
+        except Exception as err:
+            logging.error("Error: " + str(err) + " cmd: " + vmConfigVMCmd)
 
     def runVMCmd(self, cmd):
         logging.debug("runVMCmd(): instantiated")
@@ -207,8 +211,11 @@ class VBoxManage(VMManage):
         logging.debug("runVMCmd(): Thread completed")
 
     def getVMStatus(self, vmName):
-        logging.debug("getVMStatus(): instantiated " + str(vmName))
+        logging.debug("getVMStatus(): instantiated " + vmName)
         #TODO: need to make this thread safe
+        if vmName not in self.vms:
+            logging.error("getVMStatus(): vmName does not exist: " + vmName)
+            return None
         resVM = self.vms[vmName]
         #Don't want to rely on python objects in case we go with 3rd party clients in the future
         return {"vmName" : resVM.name, "vmUUID" : resVM.UUID, "setupStatus" : resVM.setupStatus, "vmState" : resVM.state, "adaptorInfo" : resVM.adaptorInfo, "groups" : resVM.groups}
@@ -217,7 +224,11 @@ class VBoxManage(VMManage):
         logging.debug("getManagerStatus(): instantiated")
         if self.readStatus == VMManage.MANAGER_UNKNOWN:
             logging.error("No status available, you must run refreshAllVMInfo() to initialize the Manager")
-        return {"readStatus" : self.readStatus, "writeStatus" : self.writeStatus}
+        vmStatus = {}
+        for vmName in self.vms:
+            resVM = self.vms[vmName]
+            vmStatus[resVM.name] = {"vmUUID" : resVM.UUID, "setupStatus" : resVM.setupStatus, "vmState" : resVM.state, "adaptorInfo" : resVM.adaptorInfo, "groups" : resVM.groups}
+        return {"readStatus" : self.readStatus, "writeStatus" : self.writeStatus, "vmstatus" : vmStatus}
         
     def startVM(self, vmName):
         logging.debug("startVM(): instantiated")
@@ -313,8 +324,7 @@ if __name__ == "__main__":
     
     logging.info("Status for \"ubuntu-core4.7\"")
     logging.info(vbm.getVMStatus("\"ubuntu-core4.7\""))
-    exit()
-#TODO: not sure why, but if the program doesn't quit here, the changes to the nic don't occur...    
+    
     logging.info("----Testing VM commands-------")
     logging.info("----Start-------")
     vbm.startVM("\"ubuntu-core4.7\"")
@@ -342,5 +352,12 @@ if __name__ == "__main__":
     while vbm.getManagerStatus()["readStatus"] != VMManage.MANAGER_IDLE and vbm.getManagerStatus()["writeStatus"] != VMManage.MANAGER_IDLE:
         logging.info("waiting for manager to finish reading/writing...")
         sleep(1)
-        
+
+    while vbm.getManagerStatus()["readStatus"] != VMManage.MANAGER_IDLE and vbm.getManagerStatus()["writeStatus"] != VMManage.MANAGER_IDLE:
+        logging.info("waiting for manager to finish reading/writing...")
+        sleep(1)
+
+    sleep(10)
+    logging.info("Final Manager Status: " + str(vbm.getManagerStatus()))
+
     logging.info("Completed Exiting...")
