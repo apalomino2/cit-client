@@ -28,22 +28,23 @@ class Engine:
         if Engine.__singleton_instance != None:
             raise Exception("Use the getInstance method to obtain an instance of this class")
         self.conns = {}
-        configuredVMs = {}
+        self.configuredVM = ""
         self.vmManage = VBoxManage()
-        selectedVM = {"name" : "", "UUID" : ""}
         
         #build the parser
         self.buildParser()
 
     def pptpStatusCmd(self, args):
         logging.debug("pptpStatusCmd(): instantiated")
-        if args.connName not in self.conns:
+        return self.pptpGetStatus(args.connName)
+
+    def pptpGetStatus(self, connName):
+        if connName not in self.conns:
             logging.error("Connection does not exist or was not created through the engine")
             return -1
         #if we're good up to this point, run the command
-        c = self.conns[args.connName]
+        c = self.conns[connName]        
         return c.getStatus() # returns {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP}
-
 
     def pptpStartCmd(self, args):
         logging.debug("pptpStartCmd(): instantiated")
@@ -88,23 +89,76 @@ class Engine:
 
         for conn in self.conns:
             connsStatus.append("Connection: " + str(self.conns[conn].getStatus()))
-        for vm in self.vms:
-            vmsStatus.append("VM: " + str(self.vms[vm].getStatus()))
+            vmsStatus.append("VM: " + str(str(self.vmManage.getManagerStatus())))
         
         return "\r\nConnections: \r\n" + str(connsStatus) + "\r\nVMs:\r\n" + str(vmsStatus)
 
 
-    def vmManageStatusCmd(self, args):
+    def vmManageVMStatusCmd(self, args):
         logging.debug("vmManageStatusCmd(): instantiated")
-
+        #will get the current configured VM (if any) display status
+        vmName = "\""+args.vmName+"\""
+        logging.debug("vmManageStatusCmd(): checking if vm is configured; stored: " + str(self.configuredVM))
+        if self.configuredVM != vmName:          
+            logging.error("VM has not been configured: " + str(vmName))
+            return None
+        logging.debug("Configured VM found, returning status")
+        #self.vmManage.refreshAllVMInfo()
+        return self.vmManage.getVMStatus(self.configuredVM)
+            
+    def vmManageMgrStatusCmd(self, args):
+        return {"configuredVM" : self.configuredVM, "mgrStatus" : self.vmManage.getManagerStatus()}
+        
+    def vmManageRefreshCmd(self, args):
+        self.vmManage.refreshAllVMInfo()
+        
     def vmConfigCmd(self, args):
         logging.debug("vmConfigCmd(): instantiated")
-
+        vmName = "\""+args.vmName+"\""
+        #check if connection is present and is connected
+        if args.connName not in self.conns:
+            logging.error("vmConfigCmd(): connection name does not exist")
+            return None
+        else:
+            c = self.conns[args.connName]
+            logging.debug("vmConfigCmd(): PPTP connection exists, checking status")
+            s = c.getStatus()["connStatus"]
+            if s == Connection.NOT_CONNECTED or s == -1:
+                logging.error("vmConfigCmd(): PPTP connection status: " + str(s) + " connection not established or does not exist")
+                return None
+                
+        #check if vm exists
+        logging.debug("vmConfigCmd(): Sending status request for VM: " + vmName)
+        if self.vmManage.getVMStatus(vmName) == None:
+            logging.error("vmConfigCmd(): vmName does not exist or you need to call refreshAllVMs: " + vmName)
+            return None
+        #if everything is good up to now, grab the last 3 of the IP address for ports, etc.
+        #setup the vm with parameters: srcIP dstIP srcPort dstPort adaptor# connName
+                
+        #self.vmManage.configureVM(self, vmName, srcIPAddress, dstIPAddress, srcPort, dstPort, adaptorNum):
+        logging.debug("vmConfigCmd(): VM found, configuring VM")
+        self.vmManage.configureVM(vmName, args.srcIPAddress, args.dstIPAddress, args.srcPort, args.dstPort, args.adaptorNum)
+        self.configuredVM = vmName
+        
     def vmManageStartCmd(self, args):
         logging.debug("vmManageStartCmd(): instantiated")
+        vmName = "\""+args.vmName+"\""
+        if self.configuredVM != vmName:          
+            logging.error("VM has not been configured")
+            return None
+        logging.debug("Configured VM found, starting vm")
+        #send start command
+        self.vmmanage.startVM(vmName)
 
     def vmManageSuspendCmd(self, args):
         logging.debug("vmManageSuspendCmd(): instantiated")
+        vmName = "\""+args.vmName+"\""
+        if self.configuredVM != vmName:          
+            logging.error("VM has not been configured")
+            return None
+        logging.debug("Configured VM found, suspending vm")
+        #send start command
+        self.vmmanage.suspendVM(vmName)
 
     def buildParser(self):
         self.parser = argparse.ArgumentParser(description='Interface to the emubox-client service.')
@@ -144,24 +198,32 @@ class Engine:
         self.vmManageParser = self.subParsers.add_parser('vm-manage')
         self.vmManageSubParsers = self.vmManageParser.add_subparsers(help='manage vm')
 
-        self.vmStatusParser = self.vmManageSubParsers.add_parser('status', help='retrieve vm status')
+        self.vmStatusParser = self.vmManageSubParsers.add_parser('vmstatus', help='retrieve vm status')
         self.vmStatusParser.add_argument('vmName', metavar='<vm name>', action="store",
                                            help='name of vm to retrieve status')
-        self.vmStatusParser.set_defaults(func=self.vmManageStatusCmd)
+        self.vmStatusParser.set_defaults(func=self.vmManageVMStatusCmd)
+
+        self.vmStatusParser = self.vmManageSubParsers.add_parser('mgrstatus', help='retrieve manager status')
+        self.vmStatusParser.set_defaults(func=self.vmManageMgrStatusCmd)
+
+        self.vmRefreshParser = self.vmManageSubParsers.add_parser('refresh', help='retreive current vm information')
+        self.vmRefreshParser.set_defaults(func=self.vmManageRefreshCmd)
 
         self.vmConfigParser = self.vmManageSubParsers.add_parser('config', help='configure vm to connect to emubox')
         self.vmConfigParser.add_argument('vmName', metavar='<vm name>', action="store",
                                           help='name vm to configure')
-        self.vmConfigParser.add_argument('srcIPAddr', metavar='<source ip address>', action="store",
+        self.vmConfigParser.add_argument('srcIPAddress', metavar='<source ip address>', action="store",
                                           help='source IP used for UDP Tunnel')
-        self.vmConfigParser.add_argument('destIPAddr', metavar='<destination ip address>', action="store",
+        self.vmConfigParser.add_argument('dstIPAddress', metavar='<destination ip address>', action="store",
                                           help='destination IP used for UDP Tunnel')
         self.vmConfigParser.add_argument('srcPort', metavar='<source port>', action="store",
                                           help='source port used for UDP Tunnel')
-        self.vmConfigParser.add_argument('destPort', metavar='<destination port>', action="store",
+        self.vmConfigParser.add_argument('dstPort', metavar='<destination port>', action="store",
                                           help='destination port used for UDP Tunnel')
         self.vmConfigParser.add_argument('adaptorNum', metavar='<adaptor number>', action="store",
                                           help='adaptor to use for UDP Tunnel configuration')
+        self.vmConfigParser.add_argument('connName', metavar='<connection name>', action="store",
+                                          help='connection to associate to configured VM')
         self.vmConfigParser.set_defaults(func=self.vmConfigCmd)
 
         self.vmStartParser = self.vmManageSubParsers.add_parser('start', help='start a vm')
@@ -192,6 +254,7 @@ class Engine:
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
+###Base Engine tests
     logging.debug("Instantiating Engine")
     e = Engine()
     logging.debug("engine object: " + str(e))
@@ -204,12 +267,14 @@ if __name__ == "__main__":
     e = Engine.getInstance()
     logging.debug("engine object: " + str(e))
 
-	#error should be provided
+###PPTP tests
+	#error should occur
     e.execute("pptp start mypptp")
     res = e.execute("pptp status mypptp")
-
+    
+    sleep(1)
     #e.execute(sys.argv[1:])
-    e.execute("pptp start mypptp 11.0.0.100 test3 test3")
+    e.execute("pptp start mypptp 11.0.0.100 test4 test4")
     res = e.execute("pptp status mypptp")
     print "STATUS: " + str(res)
 
@@ -220,16 +285,40 @@ if __name__ == "__main__":
     res = e.execute("pptp status mypptp")
     print "STATUS: " + str(res)
 
+###VMManage tests
+    sleep(5)
+    #Check status without refresh
+    res = e.execute("vm-manage vmstatus \"ubuntu-core4.7\"")
+    print "VM-Manage Status of ubuntu-core4.7: " + str(res)
+
+    #Refresh
+    sleep(5)
+    res = e.execute("vm-manage refresh")
+    print "Refreshing" + str(res)
+
+    #try to setup with a vm that doesn't exist
+    sleep(8)
+    res = e.execute("vm-manage config \"NoVM\" 11.0.0.101 11.0.0.1 1000 1000 1 mypptp")  
+
+    #try to setup with a connection that doesn't exist
+    sleep(5)
+    res = e.execute("vm-manage config \"NoVM\" 11.0.0.101 11.0.0.1 1000 1000 1 mypptp1")  
+    
+    #setup the vm with parameters: srcIP dstIP srcPort dstPort adaptor# connName
     sleep(1)
-    res = e.execute("pptp status mypptp")
-    print "STATUS: " + str(res)
+    res = e.execute("vm-manage config \"ubuntu-core4.7\" 11.0.0.101 11.0.0.1 1000 1000 1 mypptp")  
+    print "Called vm config: " + str(res)
+    
+    #Refresh
+    sleep(1)
+    res = e.execute("vm-manage refresh")
+    print "Refreshing" + str(res)
 
+    #Check status
     sleep(5)
-    res = e.execute("pptp status mypptp")
-    print "STATUS: " + str(res)
-    e.execute("pptp stop mypptp")
+    res = e.execute("vm-manage vmstatus \"ubuntu-core4.7\"")
+    print "VM-Manage Status of ubuntu-core4.7 " + str(res)
 
-    sleep(5)
-    res = e.execute("pptp status mypptp")
+    sleep(1)
+    res = e.execute("pptp stop mypptp")
     print "STATUS: " + str(res)
-
