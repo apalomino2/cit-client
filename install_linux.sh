@@ -35,8 +35,7 @@ echo >> start.sh
 echo "#Activate the container and invoke the gui" >> start.sh
 echo source ./$VENV_NAME/bin/activate >> start.sh
 echo "#These variables are set based on their values when the install script is executed. Re-set values as needed." >> start.sh
-echo cd src >> start.sh
-echo python main.py >> start.sh
+echo python -u src/main.py >> start.sh
 
 chmod 755 start.sh
 echo
