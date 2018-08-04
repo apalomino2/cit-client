@@ -328,10 +328,15 @@ if __name__ == "__main__":
     res = e.execute("vm-manage refresh")
     print "Refreshing" + str(res)
 
-    #Check status
+    #Check status of vm
     sleep(5)
     res = e.execute("vm-manage vmstatus \"ubuntu-core4.7\"")
     print "VM-Manage Status of ubuntu-core4.7 " + str(res)
+
+    #Check status of manager
+    sleep(5)
+    res = e.execute("vm-manage mgrstatus")
+    print "VM-Manage Status " + str(res)
 
     sleep(1)
     res = e.execute("pptp stop mypptp")
