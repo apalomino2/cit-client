@@ -275,8 +275,18 @@ if __name__ == "__main__":
     sleep(1)
     #e.execute(sys.argv[1:])
     e.execute("pptp start mypptp localhost test4 test4")
+    
+    #now check status
+    sleep(5)
     res = e.execute("pptp status mypptp")
     print "STATUS: " + str(res)
+    localIP = res["localIP"]
+    remoteIP = res["remoteIP"]
+    
+    if localIP == "":
+        logging.error("Connection unsuccessful, quiting")
+        exit()
+
 
     sleep(1)
     res = e.execute("engine status")
@@ -296,17 +306,21 @@ if __name__ == "__main__":
     res = e.execute("vm-manage refresh")
     print "Refreshing" + str(res)
 
+    #get parameters needed to setup VM for UDPTunnel
+    octetLocal = localIP.split(".")[3]
+    octetRemote = remoteIP.split(".")[3]
+
     #try to setup with a vm that doesn't exist
     sleep(8)
-    res = e.execute("vm-manage config \"NoVM\" 11.0.0.101 11.0.0.1 1000 1000 1 mypptp")  
+    res = e.execute("vm-manage config \"NoVM\" "+localIP+" " + remoteIP + " " +octetLocal + " " + octetLocal + " 1 mypptp")  
 
     #try to setup with a connection that doesn't exist
     sleep(5)
-    res = e.execute("vm-manage config \"NoVM\" 11.0.0.101 11.0.0.1 1000 1000 1 mypptp1")  
+    res = e.execute("vm-manage config \"NoVM\" "+localIP+" " + remoteIP + " " +octetLocal + " " + octetLocal + " 1 mypptp1")
     
     #setup the vm with parameters: srcIP dstIP srcPort dstPort adaptor# connName
     sleep(1)
-    res = e.execute("vm-manage config \"ubuntu-core4.7\" 11.0.0.101 11.0.0.1 1000 1000 1 mypptp")  
+    res = e.execute("vm-manage config \"ubuntu-core4.7\" "+localIP+" " + remoteIP + " " +octetLocal + " " + octetLocal + " 1 mypptp")
     print "Called vm config: " + str(res)
     
     #Refresh
