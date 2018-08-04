@@ -32,7 +32,7 @@ class Connection():
         self.password = ""
 
     #abstractmethod
-    def connect(self):
+    def connect(self, serverIP, username, password):
         raise NotImplementedError()
 
     #abstractmethod

@@ -149,10 +149,10 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
 
-    conn = Connection(connectionName = "testpptp")
-    serverIP = "11.0.0.100"
-    username = "test3"
-    password = "test3"
+    conn = PPTPConnection(connectionName = "testpptp")
+    serverIP = "localhost"
+    username = "test4"
+    password = "test4"
 
     logging.debug("Calling connection()")
     conn.connect(serverIP, username, password)
@@ -162,7 +162,7 @@ if __name__ == "__main__":
         sleep(5)
         if conn.getStatus()["connStatus"] == Connection.NOT_CONNECTED:
             conn.connect(serverIP, username, password)
-    sleep(5)
+
     logging.debug("Status: " + str(conn.getStatus()))
     logging.debug("Calling disconnect()")
     conn.disconnect()
