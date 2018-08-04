@@ -274,7 +274,7 @@ if __name__ == "__main__":
     
     sleep(1)
     #e.execute(sys.argv[1:])
-    e.execute("pptp start mypptp 11.0.0.100 test4 test4")
+    e.execute("pptp start mypptp localhost test4 test4")
     res = e.execute("pptp status mypptp")
     print "STATUS: " + str(res)
 
