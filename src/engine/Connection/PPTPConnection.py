@@ -29,11 +29,13 @@ class PPTPConnection(Connection):
                     if out != '':
                         logging.debug("connProcess(): stdout Line: " + out)
                         if "local  IP address " in out:
-                            logging.debug("connProcess(): local IP address identified")
+                            logging.debug("connProcess(): local IP address identified: " + out.strip().split("address ")[1])
+                            self.localIPAddress = out.strip().split("address ")[1]
                             localAddressSet = True
                         if "remote IP address" in out:
-                            logging.debug("connProcess(): local IP address identified")
+                            logging.debug("connProcess(): remote IP address identified" + out.strip().split("address")[1])
                             remoteAddressSet = True
+                            self.remoteIPAddress = out.strip().split("address ")[1]
                         if localAddressSet and remoteAddressSet:
                             logging.debug("connProcess(): Connection Established")
                             self.connStatus = Connection.CONNECTED
@@ -142,7 +144,7 @@ class PPTPConnection(Connection):
     def getStatus(self):
         logging.debug( "getStatus(): instantiated")
         #Don't want to rely on python objects in case we go with 3rd party clients in the future
-        return {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP}
+        return {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP, "localIP" : self.localIPAddress, "remoteIP" : self.remoteIPAddress}
 
 
 if __name__ == "__main__":

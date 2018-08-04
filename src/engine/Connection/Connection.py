@@ -28,6 +28,8 @@ class Connection():
         self.connStatus = Connection.NOT_CONNECTED
         self.disConnStatus = Connection.NOT_DISCONNECTING
         self.serverIP = None
+        self.localIPAddress = ""
+        self.remoteIPAddress = ""
         self.username = ""
         self.password = ""
 
