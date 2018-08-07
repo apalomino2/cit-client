@@ -10,12 +10,13 @@ import logging
 class VMActioningDialog(Gtk.Dialog):
     def __init__(self, parent, vmName, vmAction):
         Gtk.Dialog.__init__(self, "Executing VM Action", parent, 0, (Gtk.STOCK_OK, Gtk.ResponseType.OK))
+        self.set_resizable(False)
         self.vmName = vmName
         self.vmAction = vmAction
 
         box = self.get_content_area()
 
-        self.set_default_size(150, 100)
+        self.set_size_request(225, 100)
         self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
 
         self.label = Gtk.Label("Executing VM Action")

@@ -9,17 +9,18 @@ from engine.Engine import Engine
 from engine.Connection.Connection import Connection
 from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
 
-
-# This class contains the main window, its main container is a notebook
+# This class contains the main window
 class AppWindow(Gtk.ApplicationWindow):
 
     def __init__(self, *args, **kwargs):
         logging.debug("Creating AppWindow")
         super(AppWindow, self).__init__(*args, **kwargs)
-        self.set_default_size(220, 180)
-        #self.set_resizable(False)
+        self.set_icon_name("gtk-connect")
+        self.set_default_size(260, 180)
+        self.set_resizable(False)
         self.set_position(Gtk.WindowPosition.CENTER)
         self.set_border_width(5)
+        
 ##Outer Box
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.add(self.box_outer)

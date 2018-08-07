@@ -13,7 +13,8 @@ class LoginDialog(Gtk.Dialog):
         Gtk.Dialog.__init__(self, "Login", parent, 0,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OK, Gtk.ResponseType.OK))
-		
+        self.set_resizable(False)
+        
         self.config = configparser.ConfigParser()
         self.readConfig(LoginDialog.CONFIG_FILE)
 		

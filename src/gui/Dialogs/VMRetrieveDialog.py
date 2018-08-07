@@ -10,10 +10,10 @@ import logging
 class VMRetrieveDialog(Gtk.Dialog):
     def __init__(self, parent):
         Gtk.Dialog.__init__(self, "VM Retrieve Dialog", parent, 0, (Gtk.STOCK_OK, Gtk.ResponseType.OK))
-
+        self.set_resizable(False)
         box = self.get_content_area()
 
-        self.set_default_size(150, 100)
+        self.set_default_size(225, 100)
         self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
 
         self.label = Gtk.Label("Virtual Machine Retrieval")

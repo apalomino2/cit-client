@@ -10,11 +10,12 @@ import logging
 class DisconnectingDialog(Gtk.Dialog):
     def __init__(self, parent, connName):
         Gtk.Dialog.__init__(self, "Emubox Disconnecting", parent, 0, (Gtk.STOCK_OK, Gtk.ResponseType.OK))
+        self.set_resizable(False)
         self.connName = connName
 
         box = self.get_content_area()
 
-        self.set_default_size(150, 100)
+        self.set_default_size(225, 100)
         self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
 
         self.label = Gtk.Label("Disconnecting from Emubox Server")
