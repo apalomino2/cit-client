@@ -63,11 +63,11 @@ class LoginConnectingDialog(Gtk.Dialog):
         #will check status every 1 second and will either display stopped or ongoing or connected
         while(True):
             logging.debug("watchConnStatus(): running: pptp status " + self.connName)
-            self.status = e.execute("pptp status " + self.connName)["connStatus"]
+            self.status = e.execute("pptp status " + self.connName)
             logging.debug("watchConnStatus(): result: " + str(self.status))
-            if self.status == Connection.CONNECTING:
+            if self.status["connStatus"] == Connection.CONNECTING:
                 GLib.idle_add(self.setGUIStatus, "Trying to establish connection", None, None)
-            elif self.status == Connection.CONNECTED:
+            elif self.status["connStatus"] == Connection.CONNECTED:
                 GLib.idle_add(self.setGUIStatus, "Connection Established", False, True)
                 break
             else:

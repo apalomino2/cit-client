@@ -4,6 +4,7 @@ import logging
 from gui.Dialogs.LoginDialog import LoginDialog
 from gui.Dialogs.LoginConnectingDialog import LoginConnectingDialog
 from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
+from gui.Widgets.VMManageBox import VMManageBox
 from engine.Engine import Engine
 from engine.Connection.Connection import Connection
 import configparser
@@ -18,12 +19,14 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 class ConnectionBox(Gtk.ListBox):
 
     CONNECTION_NAME = "emubox"
-
-    def __init__(self, parent):
+    
+    def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()
         
         logging.debug("Creating ConnectionBox")
         self.parent = parent
+        self.vmManageBox = vmManageBox
+        
         self.set_selection_mode(Gtk.SelectionMode.NONE)
         self.set_border_width(10)
 
@@ -51,6 +54,8 @@ class ConnectionBox(Gtk.ListBox):
         self.connectionButton.props.valign = Gtk.Align.CENTER
         self.hbox.pack_start(self.connectionButton, False, True, 0)
         self.add(self.row)
+        
+        self.vmManageBox.set_sensitive(False)
 
         self.row = Gtk.ListBoxRow()
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
@@ -97,10 +102,15 @@ class ConnectionBox(Gtk.ListBox):
                 #TODO: also remember for later
                 res = self.attemptLogin(serverIPText, usernameText, passwordText)
 
-                if res == Connection.CONNECTED:
+                if res["connStatus"] == Connection.CONNECTED:
                     button.set_label("Disconnect")
                     self.connStatusLabel.set_label(" Connected ")
                     self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
+                    self.vmManageBox.setConnectionObject(res)
+                    self.vmManageBox.set_sensitive(True)
+                    if self.vmManageBox.vmStatusLabel.get_text() == " Configured ":
+                        self.vmManageBox.startVMButton.set_sensitive(True)
+                        self.vmManageBox.suspendVMButton.set_sensitive(True)
     
             elif response == Gtk.ResponseType.CANCEL:
                 #just clear out the dialog
@@ -110,10 +120,13 @@ class ConnectionBox(Gtk.ListBox):
         else:
             #call disconnect logic
             res = self.attemptDisconnect()
-            if res == Connection.NOT_CONNECTED:
+            if res["connStatus"] == Connection.NOT_CONNECTED:
                 button.set_label("Connect")
                 self.connStatusLabel.set_label(" Disconnected ")
                 self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
+                self.vmManageBox.set_sensitive(False)
+                self.vmManageBox.startVMButton.set_sensitive(False)
+                self.vmManageBox.suspendVMButton.set_sensitive(False)
     
     def attemptLogin(self, serverIP, username, password):
         logging.debug("attemptLogin(): initiated")

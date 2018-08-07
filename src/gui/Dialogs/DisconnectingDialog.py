@@ -62,11 +62,11 @@ class DisconnectingDialog(Gtk.Dialog):
         #will check status every 1 second and will either display stopped or ongoing or connected
         while(True):
             logging.debug("watchDisconnStatus(): running: pptp status " + self.connName)
-            self.status = e.execute("pptp status " + self.connName)["connStatus"]
+            self.status = e.execute("pptp status " + self.connName)
             logging.debug("watchConnStatus(): result: " + str(self.status))
-            if self.status == Connection.DISCONNECTING:
+            if self.status["connStatus"] == Connection.DISCONNECTING:
                 GLib.idle_add(self.setGUIStatus, "Disconnecting...", None, None)
-            elif self.status == Connection.NOT_CONNECTED:
+            elif self.status["connStatus"] == Connection.NOT_CONNECTED:
                 GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
                 break
             else:

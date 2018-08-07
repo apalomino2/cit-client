@@ -24,11 +24,11 @@ class AppWindow(Gtk.ApplicationWindow):
         self.box_outer = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
         self.add(self.box_outer)
 
-        self.connectionBox = ConnectionBox(self)
-        self.box_outer.pack_start(self.connectionBox, True, True, 0)
-
         self.vmManageBox = VMManageBox(self)
-        self.box_outer.pack_start(self.vmManageBox, True, True, 0)
+        self.box_outer.pack_end(self.vmManageBox, True, True, 0)
+        
+        self.connectionBox = ConnectionBox(self, self.vmManageBox)
+        self.box_outer.pack_start(self.connectionBox, True, True, 0)
 		
         self.connect('delete_event', self.catchClosing)
 		
@@ -67,7 +67,7 @@ class AppWindow(Gtk.ApplicationWindow):
                 disconnectingDialog.run()
                 s = disconnectingDialog.getFinalStatus()
                 disconnectingDialog.destroy()
-                if s == Connection.NOT_CONNECTED:
+                if s["connStatus"] == Connection.NOT_CONNECTED:
                     self.destroy()
                 else:
                     cannotCloseDialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING,

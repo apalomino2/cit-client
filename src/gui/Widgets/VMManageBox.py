@@ -2,7 +2,8 @@ import gi; gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk, Gdk
 import logging
 from gui.Dialogs.ConfigureVMDialog import ConfigureVMDialog
-
+from engine.Connection.Connection import Connection
+from gui.Dialogs.VMActioningDialog import VMActioningDialog
 
 class ListBoxRowWithData(Gtk.ListBoxRow):
     def __init__(self, data):
@@ -16,6 +17,7 @@ class VMManageBox(Gtk.ListBox):
         super(VMManageBox, self).__init__()
         logging.debug("Creating VMManageBox")
         self.parent = parent
+        self.connectionObject = None
         self.set_selection_mode(Gtk.SelectionMode.NONE)
 
         ####Lower ListBox (Virtual Machine Configuration)
@@ -76,15 +78,23 @@ class VMManageBox(Gtk.ListBox):
         self.add(self.row)
 
         self.show_all()
+        
+    def setConnectionObject(self, connection):
+        self.connection = connection
 
     def configureVM(self, button):
         logging.debug("configureVM(): initiated")
         logging.debug("configureVM(): Button Label: " + button.get_label())
-        configureVMDialog = ConfigureVMDialog(self.parent)
+        #TODO: need a better way to get connection name and check if we're connected
+        configureVMDialog = ConfigureVMDialog(self.parent, self.connection)
         response = configureVMDialog.run()
         if response == Gtk.ResponseType.OK:
+            configuredVM = configureVMDialog.getFinalStatus()["vmName"]
             self.vmStatusLabel.set_label(" Configured ")
+            self.vmNameLabel.set_label(configuredVM)
             self.vmStatusEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
+            self.startVMButton.set_sensitive(True)
+            self.suspendVMButton.set_sensitive(True)
         elif response == Gtk.ResponseType.CANCEL:
             {}
         configureVMDialog.destroy()
@@ -92,3 +102,15 @@ class VMManageBox(Gtk.ListBox):
     def vmAction(self, button):
         logging.debug("configureVM(): initiated")
         logging.debug("configureVM(): Button pressed was: " + button.get_tooltip_text())
+        if self.vmNameLabel.get_label() != " Not Configured ":
+            if button.get_tooltip_text() == "Start Virtual Machine":
+                vmActioningDialog = VMActioningDialog(self.parent, self.vmNameLabel.get_label(), "start")
+                vmActioningDialog.run()
+                s = vmActioningDialog.getFinalStatus()
+                vmActioningDialog.destroy()
+            elif button.get_tooltip_text() == "Stop Virtual Machine":
+                vmActioningDialog = VMActioningDialog(self.parent, self.vmNameLabel.get_label(), "suspend")
+                vmActioningDialog.run()
+                s = vmActioningDialog.getFinalStatus()
+                vmActioningDialog.destroy()
+                

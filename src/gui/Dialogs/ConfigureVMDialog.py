@@ -3,16 +3,21 @@ gi.require_version('Gtk', '3.0')
 from gi.repository import Gtk
 from gui.Widgets.VMTreeWidget import VMTreeWidget
 from gui.Dialogs.VMRetrieveDialog import VMRetrieveDialog
+from gui.Dialogs.ConfiguringVMDialog import ConfiguringVMDialog
+from engine.Engine import Engine
 import logging
 
 class ConfigureVMDialog(Gtk.Dialog):
-    def __init__(self, parent):
+    def __init__(self, parent, connection):
         Gtk.Dialog.__init__(self, "Configure Virtual Machine", parent, 0,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OK, Gtk.ResponseType.OK))
-             
+        self.connName = "emubox"
+        self.connection = connection
+        self.vms = {}
         self.vmName = ""
         self.set_default_size(500, 300)
+        self.status = None
 
         label = Gtk.Label("Select a VM and Adaptor")
 
@@ -29,15 +34,17 @@ class ConfigureVMDialog(Gtk.Dialog):
         box.add(label)
         box.add(treeWidget)
         
+        self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
+        
         self.show_all()
     
         vmRetrieveDialog = VMRetrieveDialog(self)
         vmRetrieveDialog.run()
         s = vmRetrieveDialog.getFinalData()
-        vms = s["mgrStatus"]["vmstatus"]
+        self.vms = s["mgrStatus"]["vmstatus"]
         vmRetrieveDialog.destroy()
         
-        treeWidget.populateTreeStore(vms)
+        treeWidget.populateTreeStore(self.vms)
         
     def onItemSelected(self, selection):
         model, treeiter = selection.get_selected()
@@ -54,5 +61,16 @@ class ConfigureVMDialog(Gtk.Dialog):
     def dialogResponseActionEvent(self, dialog, responseID):
         # OK was clicked and there is text
         if responseID == Gtk.ResponseType.OK:
-            logging.debug("dialogResponseActionEvent(): OK was pressed: " + self.vmName + " " + self.adaptorAdaptorSelected)
-        
+            #check to make sure the connection is still connected:
+            logging.debug("dialogResponseActionEvent(): OK was pressed: " + self.vmName + " " + self.adaptorSelected)
+            self.status = {"vmName" : self.vmName, "adaptorSelected" : self.adaptorSelected}
+            #get the first value in adaptorSelected (should always be a number)
+            adaptorNum = self.adaptorSelected[0]
+            octetLocal = self.connection["localIP"].split(".")[3]
+            configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], self.connection["remoteIP"], octetLocal, adaptorNum, self.connName)
+            configuringVMDialog.run()
+            s = configuringVMDialog.getFinalData()
+            configuringVMDialog.destroy()
+    
+    def getFinalStatus(self):
+        return self.status
