@@ -148,7 +148,7 @@ class Engine:
             return None
         logging.debug("Configured VM found, starting vm")
         #send start command
-        self.vmmanage.startVM(vmName)
+        self.vmManage.startVM(vmName)
 
     def vmManageSuspendCmd(self, args):
         logging.debug("vmManageSuspendCmd(): instantiated")
@@ -158,7 +158,7 @@ class Engine:
             return None
         logging.debug("Configured VM found, suspending vm")
         #send start command
-        self.vmmanage.suspendVM(vmName)
+        self.vmManage.suspendVM(vmName)
 
     def buildParser(self):
         self.parser = argparse.ArgumentParser(description='Interface to the emubox-client service.')
