@@ -25,13 +25,13 @@ virtualenv "%VENV_NAME%"
 
 IF %PYTHONARCH%==64 (
 echo Processing using a 64-bit python27 installation
-%VENV_NAME%\Scripts\activate & pip install lxml & xcopy python27-64bit-gtk3\* "%VENV_NAME%" /E /Y & %VENV_NAME%\Scripts\deactivate
+%VENV_NAME%\Scripts\activate & pip install lxml & pip install configparser & xcopy python27-64bit-gtk3\* "%VENV_NAME%" /E /Y & %VENV_NAME%\Scripts\deactivate
 REM Now create the file that will start the gui
 echo REM the name of the container used during installation > start.bat
 echo set VENV_NAME=app-container >> start.bat
 echo. >> start.bat
 echo REM activate the container and invoke the gui >> start.bat
-echo %VENV_NAME%\Scripts\activate ^& cd src ^& python main.py ^& deactivate ^& cd .. >> start.bat
+echo %VENV_NAME%\Scripts\activate ^& python -u src/main.py ^& deactivate ^& cd .. >> start.bat
 echo Type: start.bat to start the application
 )
 
