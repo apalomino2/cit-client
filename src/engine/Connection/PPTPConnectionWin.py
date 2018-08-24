@@ -134,7 +134,7 @@ class PPTPConnectionWin(Connection):
                         logging.debug("connProcess(): Connection established")
                         connSuccess = True
             logging.info("Process completed: " + cmd)
-        
+                
             #Get the VPN local and server IP addresses
             self.localIPAddress = self.getVPNLocalIP()
             if self.localIPAddress == "":
@@ -151,7 +151,7 @@ class PPTPConnectionWin(Connection):
             if connSuccess and localAddressSet and remoteAddressSet:
                 self.connStatus = Connection.CONNECTED
             else:
-                Connection.NOT_CONNECTED
+                self.connStatus = Connection.NOT_CONNECTED
 
         except Exception as x:
             logging.error(" connProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
@@ -251,4 +251,3 @@ if __name__ == "__main__":
     sleep(5)
     logging.debug("Status: " + str(conn.getStatus()))
     logging.debug("Complete")
-
