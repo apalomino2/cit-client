@@ -174,6 +174,7 @@ class PPTPConnectionWin(Connection):
                         break
                     if out != '':
                         logging.debug("disconnProcess(): stdout Line: " + out)
+
             except Exception as x:
                 logging.error(
                     " disconnProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
@@ -182,7 +183,8 @@ class PPTPConnectionWin(Connection):
                     self.disConnStatus = Connection.NOT_DISCONNECTING
                     return False
             logging.info("Process completed: " + cmd)
-
+            self.connStatus = Connection.NOT_CONNECTED
+            
             #disconnect
             logging.debug("disconnProcess(): removing connection: " + self.connectionName)
             if self.removeConnProcess() == False:
