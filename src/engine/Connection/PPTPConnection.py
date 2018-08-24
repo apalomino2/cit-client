@@ -54,7 +54,7 @@ class PPTPConnection(Connection):
                 p.terminate()
 
     def removeConnProcess(self, cmd):
-        # Function for starting the process and capturing its stdout
+        # Function for removing the process and capturing its stdout
         try:
             logging.debug("Starting process: " + str(cmd) + "\r\n")
             outlog = ""
@@ -65,7 +65,7 @@ class PPTPConnection(Connection):
                     if out == '' and p.poll() != None:
                         break
                     if out != '':
-                        logging.debug("disconnProcess(): stdout Line: " + out)
+                        logging.debug("removeConnProcess(): stdout Line: " + out)
 
                 logging.info("Process completed: " + cmd)
             else:
@@ -74,7 +74,7 @@ class PPTPConnection(Connection):
 
         except Exception as x:
             logging.error(
-                " disconnProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
+                " removeConnProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
             if p != None and p.poll() == None:
                 p.terminate()
 
@@ -99,6 +99,8 @@ class PPTPConnection(Connection):
                 self.serverIP = None
                 self.username = ""
                 self.password = ""
+                self.localIPAddress = ""
+                self.serverIPAddress = ""
                 #connectionName, serverIP, username, password
 
             else:
