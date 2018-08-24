@@ -91,4 +91,12 @@ def removeConnection(name):
     print("VPN removed.")
 
 createVPNConnection("emubox-client", "test3", "test3", "192.168.197.3")
+time.sleep(30)
 removeConnection("emubox-client")
+
+#Get Connection Status:
+#(Get-VpnConnection -Name test-emu).ConnectionStatus
+#Get Server IP Address:
+#(Get-VpnConnection -Name test-emu).ServerAddress
+#Get local IP Address:
+#(Get-NetIPAddress -InterfaceAlias emubox-client).IPAddress

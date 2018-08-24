@@ -7,7 +7,9 @@ import sys
 from time import sleep
 from Connection.Connection import Connection
 from Connection.PPTPConnection import PPTPConnection
+from Connection.PPTPConnectionWin import PPTPConnectionWin
 from VMManage.VBoxManage import VBoxManage
+from VMManage.VBoxManageWin import VBoxManageWin
 import threading
 
 class Engine:
@@ -29,7 +31,10 @@ class Engine:
             raise Exception("Use the getInstance method to obtain an instance of this class")
         self.conns = {}
         self.configuredVM = ""
-        self.vmManage = VBoxManage()
+        if sys.platform == "linux" or sys.platform == "linux2":
+            self.vmManage = VBoxManage()
+        else:
+            self.vmManage = VBoxManageWin()
         
         #build the parser
         self.buildParser()
@@ -50,7 +55,10 @@ class Engine:
         logging.debug("pptpStartCmd(): instantiated")
 
         if args.connName not in self.conns:
-            c = PPTPConnection(connectionName = args.connName)
+            if sys.platform == "linux" or sys.platform == "linux2":
+                c = PPTPConnection(connectionName = args.connName)
+            else:
+                c = PPTPConnectionWin(connectionName = args.connName)
             #have to add to list of conns because we don't know if the connection was successful until later
             self.conns[args.connName] = c
         else:
