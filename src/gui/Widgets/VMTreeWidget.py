@@ -15,10 +15,10 @@ class VMTreeWidget(Gtk.Grid):
         self.set_column_homogeneous(True)
         self.set_row_homogeneous(True)
         
-        self.liststore_manufacturers = Gtk.ListStore(str)        
+        self.adaptersListStore = Gtk.ListStore(str)        
 
         # Initialized fields
-        self.treeStore = Gtk.TreeStore(str, str)
+        self.treeStore = Gtk.TreeStore(str, str, str)
         self.treeView = Gtk.TreeView(self.treeStore)
         self.scrollableTreeList = Gtk.ScrolledWindow()
         
@@ -30,27 +30,35 @@ class VMTreeWidget(Gtk.Grid):
         for vm in self.vmList:
             logging.debug("populateTreeStore(): working with: " + str(vm))
             adaptor = str("1 - " + self.vmList[vm]["adaptorInfo"]["1"])
+            res = self.vmList[vm]["vmState"]
+            if res == 2:
+                status = "Running (not selectable)"
+            else:
+                status = "OK"
             if "\"none\"" in adaptor:
                 adaptor = "1 - *adaptor disabled*"
-            treeIter = self.treeStore.append(None, [vm, adaptor])
+            treeIter = self.treeStore.append(None, [vm, adaptor, str(status)])
         self.adaptors = ["1", "2",
             "3", "4", "5", "6", "7", "8"]
         for item in self.adaptors:
-            self.liststore_manufacturers.append([item])
+            self.adaptersListStore.append([item])
 
     def drawTreeView(self):
-        renderer = Gtk.CellRendererText()
+        vmNameRenderer = Gtk.CellRendererText()
         renderer_combo = Gtk.CellRendererCombo()
         renderer_combo.set_property("editable", True)
-        renderer_combo.set_property("model", self.liststore_manufacturers)
+        renderer_combo.set_property("model", self.adaptersListStore)
         renderer_combo.set_property("text-column", 0)
         renderer_combo.set_property("has-entry", False)
         renderer_combo.connect("edited", self.on_combo_changed)
+        statusRenderer = Gtk.CellRendererText()
         
-        vmColumn = Gtk.TreeViewColumn("Virtual Machine", renderer, text=0)
+        vmColumn = Gtk.TreeViewColumn("Virtual Machine", vmNameRenderer, text=0)
         adaptorColumn = Gtk.TreeViewColumn("Adaptor", renderer_combo, text=1)
+        statusColumn = Gtk.TreeViewColumn("Status", statusRenderer, text=2)
         self.treeView.append_column(vmColumn)
         self.treeView.append_column(adaptorColumn)
+        self.treeView.append_column(statusColumn)
         
     def on_combo_changed(self, widget, path, text):
         logging.debug("on_combo_changed(): widget: " + str(widget) + " path: " + str(path) + " text: " + str(text))

@@ -52,7 +52,11 @@ class ConfigureVMDialog(Gtk.Dialog):
             return
         self.vmName = model[treeiter][0]
         self.adaptorSelected = model[treeiter][1]
+        self.status = model[treeiter][2]
         if "\"none\"" in self.adaptorSelected or "adaptor disabled" in self.adaptorSelected:
+            self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
+            return
+        if "Running" in self.status:
             self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
             return
             
