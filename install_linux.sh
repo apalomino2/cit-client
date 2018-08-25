@@ -6,7 +6,7 @@ if [ -z "$VENV_NAME" ]; then
     VENV_NAME=app-container
 fi
 
-pip install virtualenv
+python2 -m pip install virtualenv
 virtualenv $VENV_NAME
 
 source ./$VENV_NAME/bin/activate
