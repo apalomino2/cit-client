@@ -52,13 +52,15 @@ class VBoxManageWin(VMManage):
         
     def runVMSInfo(self):
         logging.debug("runVMSInfo(): instantiated")
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         #run vboxmanage to get vm listing
         self.readStatus = VMManage.MANAGER_READING
         #clear out the current set
         self.vms = {}
         vmListCmd = VBoxManageWin.VBOX_PATH + " list vms"
         logging.debug("runVMSInfo(): Collecting VM Names using cmd: " + vmListCmd)
-        p = Popen(vmListCmd, stdout=PIPE, stderr=PIPE)
+        p = Popen(vmListCmd, stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
         while True:
             out = p.stdout.readline()
             if out == '' and p.poll() != None:
@@ -83,7 +85,7 @@ class VBoxManageWin(VMManage):
             logging.debug("runVMSInfo(): collecting # " + str(vmNum) + " of " + str(len(self.vms)))
             vmShowInfoCmd = VBoxManageWin.VBOX_PATH + " showvminfo " + str(self.vms[aVM].UUID) + "" + " --machinereadable"
             logging.debug("runVMSInfo(): Running " + vmShowInfoCmd)
-            p = Popen(vmShowInfoCmd, stdout=PIPE, stderr=PIPE)
+            p = Popen(vmShowInfoCmd, stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             while True:
                 out = p.stdout.readline()
                 if out == '' and p.poll() != None:
@@ -120,10 +122,12 @@ class VBoxManageWin(VMManage):
 
     def runVMInfo(self, aVM):
         logging.debug("runVMSInfo(): instantiated")
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         self.readStatus = VMManage.MANAGER_READING
         vmShowInfoCmd = VBoxManageWin.VBOX_PATH + " showvminfo " + self.vms[aVM].UUID + "" + " --machinereadable"
         logging.debug("runVMSInfo(): Running " + vmShowInfoCmd)
-        p = Popen(vmShowInfoCmd, stdout=PIPE, stderr=PIPE)
+        p = Popen(vmShowInfoCmd, stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
         while True:
             out = p.stdout.readline()
             if out == '' and p.poll() != None:
@@ -170,11 +174,13 @@ class VBoxManageWin(VMManage):
 
     def runVMCmd(self, cmd):
         logging.debug("runVMCmd(): instantiated")
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         self.writeStatus = VMManage.MANAGER_WRITING
         self.readStatus = VMManage.MANAGER_READING
         vmCmd = VBoxManageWin.VBOX_PATH + " " + cmd
         logging.debug("runConfigureVM(): Running " + vmCmd)
-        p = Popen(vmCmd, stdout=PIPE, stderr=PIPE)
+        p = Popen(vmCmd, stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
         while True:
             out = p.stdout.readline()
             if out == '' and p.poll() != None:

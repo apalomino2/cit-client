@@ -31,7 +31,7 @@ echo REM the name of the container used during installation > start.bat
 echo set VENV_NAME=app-container >> start.bat
 echo. >> start.bat
 echo REM activate the container and invoke the gui >> start.bat
-echo %VENV_NAME%\Scripts\activate ^& python -u src/main.py ^& deactivate >> start.bat
-echo Type: start.bat to start the application
+echo %VENV_NAME%\Scripts\activate ^& pythonw -u src/main.pyw ^& deactivate >> start.bat
+echo Type: start.cmd to start the application
 )
 

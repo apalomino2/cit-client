@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 from subprocess import Popen, PIPE
+import subprocess
 from Connection import Connection
 from sys import argv, platform
 import logging
@@ -16,9 +17,11 @@ class PPTPConnectionWin(Connection):
     # Function to establish create and connect to a VPN.
     def checkConnExists(self):
         logging.debug("checkConnExists(): instantiated")
-        checkCmd = "powershell (Get-VpnConnection -Name "+self.connectionName+").ConnectionStatus"
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        checkCmd = "powershell -WindowStyle Hidden (Get-VpnConnection -Name "+self.connectionName+").ConnectionStatus"
         try:
-            process = Popen(shlex.split(checkCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            process = Popen(shlex.split(checkCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             result = process.communicate()[0]
             status = str(result.decode("utf-8").strip())
             if status == "Connected" or status == "Disconnected":
@@ -32,9 +35,11 @@ class PPTPConnectionWin(Connection):
             
     def removeConnProcess(self):
         logging.debug("removeConnProcess(): instantiated")
-        removeCmd = "powershell Remove-VpnConnection -Name "+self.connectionName+" -Force -PassThru "
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        removeCmd = "powershell -WindowStyle Hidden Remove-VpnConnection -Name "+self.connectionName+" -Force -PassThru "
         try:
-            process = Popen(shlex.split(removeCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            process = Popen(shlex.split(removeCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             result = process.communicate()[0]
             if self.checkConnExists() != False:
                 logging.error("removeConnProcess(): Could not remove connection" + str(result))
@@ -48,9 +53,11 @@ class PPTPConnectionWin(Connection):
 
     def addConn(self):
         logging.debug("addConn(): instantiated")
-        addCmd = "powershell (Add-VpnConnection -Name "+self.connectionName + " -ServerAddress "+ self.serverIP + " -PassThru -TunnelType Pptp).Name"
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        addCmd = "powershell -WindowStyle Hidden (Add-VpnConnection -Name "+self.connectionName + " -ServerAddress "+ self.serverIP + " -PassThru -TunnelType Pptp).Name"
         try:
-            process = Popen(shlex.split(addCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            process = Popen(shlex.split(addCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             result = process.communicate()[0]
             
             if str(result).strip() != self.connectionName:
@@ -66,10 +73,11 @@ class PPTPConnectionWin(Connection):
     def getVPNLocalIP(self):
         #(Get-NetIPAddress -InterfaceAlias emubox-client).IPAddress
         logging.debug("getVPNLocalIP(): instantiated")
-        
-        getLocalCmd = "powershell (Get-NetIPAddress -InterfaceAlias "+self.connectionName+").IPAddress"
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        getLocalCmd = "powershell -WindowStyle Hidden (Get-NetIPAddress -InterfaceAlias "+self.connectionName+").IPAddress"
         try:
-            process = Popen(shlex.split(getLocalCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            process = Popen(shlex.split(getLocalCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             result = process.communicate()[0]
             
             if str(result) == "":
@@ -84,10 +92,12 @@ class PPTPConnectionWin(Connection):
     def getVPNServerIP(self):
         #(Get-VpnConnection -Name test-emu).ServerAddress
         logging.debug("getVPNServerIP(): instantiated")
-        #powershell (Get-VpnConnection -Name test-emu).ServerAddress
-        getServerCmd = "powershell (Get-VpnConnection -Name "+self.connectionName+").ServerAddress"
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        #powershell -WindowStyle Hidden (Get-VpnConnection -Name test-emu).ServerAddress
+        getServerCmd = "powershell -WindowStyle Hidden (Get-VpnConnection -Name "+self.connectionName+").ServerAddress"
         try:
-            process = Popen(shlex.split(getServerCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            process = Popen(shlex.split(getServerCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             result = process.communicate()[0]
             
             if str(result) == "":
@@ -101,6 +111,8 @@ class PPTPConnectionWin(Connection):
         
     def connProcess(self, cmd):
         logging.debug("connProcess(): instantiated")
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         # Function for starting the process and capturing its stdout
         localAddressSet = False
         remoteAddressSet = False
@@ -123,7 +135,7 @@ class PPTPConnectionWin(Connection):
         try:
             logging.debug("Starting process: " + str(cmd) + "\r\n")
             connSuccess = False
-            p = Popen(shlex.split(cmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+            p = Popen(shlex.split(cmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
             while True:
                 out = p.stdout.readline()
                 if out == '' and p.poll() != None:
@@ -161,13 +173,15 @@ class PPTPConnectionWin(Connection):
 
     def disconnProcess(self, cmd):
         logging.debug("diconnProcess(): instantiated")
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         # Function for starting the process and capturing its stdout
         #Check if conn exists
         if self.checkConnExists() == True:
             try:
                 logging.debug("Starting process: " + str(cmd) + "\r\n")
                 outlog = ""
-                p = Popen(shlex.split(cmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE)
+                p = Popen(shlex.split(cmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
                 while True:
                     out = p.stdout.readline()
                     if out == '' and p.poll() != None:
@@ -207,8 +221,8 @@ class PPTPConnectionWin(Connection):
         logging.debug("Starting pptp connection thread")
         self.connStatus = Connection.CONNECTING
         self.serverIP = serverIP
-        #["powershell", "rasdial %s %s %s" % (name, username, password)
-        connCmd = "powershell rasdial " + self.connectionName + " " + username + " " + password
+        #["powershell -WindowStyle Hidden", "rasdial %s %s %s" % (name, username, password)
+        connCmd = "powershell -WindowStyle Hidden rasdial " + self.connectionName + " " + username + " " + password
         t = threading.Thread(target=self.connProcess, args=(connCmd,))
         t.start()
 
@@ -217,7 +231,7 @@ class PPTPConnectionWin(Connection):
         logging.debug("Shutting down pptp connection thread")
         self.connStatus = Connection.DISCONNECTING
                       
-        closeConnCmd = "powershell rasdial " + self.connectionName + " /DISCONNECT "
+        closeConnCmd = "powershell -WindowStyle Hidden rasdial " + self.connectionName + " /DISCONNECT "
         t = threading.Thread(target=self.disconnProcess, args=(closeConnCmd,))
         t.start()
 
