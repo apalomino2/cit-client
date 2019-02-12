@@ -3,15 +3,15 @@ REM Edit the following variables according to python installation
 set PYTHONARCH=64
 
 REM ask user for version of python
-set /P version64="Is your python installation Python 2.7.* 64-bit? (Y/N): "
-IF NOT "%version64%"=="Y" IF NOT "%version64%"=="y" (
-set PYTHONARCH=32
-echo *************************************************************************************************
-echo Sorry, this version of Python is currently not supported. Please install Python 2.7 64-bit.
-echo *************************************************************************************************
-pause
-exit
-)
+REM set /P version64="Is your python installation Python 2.7.* 64-bit? (Y/N): "
+REM IF NOT "%version64%"=="Y" IF NOT "%version64%"=="y" (
+REM set PYTHONARCH=32
+REM echo *************************************************************************************************
+REM echo Sorry, this version of Python is currently not supported. Please install Python 2.7 64-bit.
+REM echo *************************************************************************************************
+REM pause
+REM exit
+REM )
 
 REM set directory to place Gtk files
 set PYTHONPACKAGES_PATH=Lib\site-packages\
