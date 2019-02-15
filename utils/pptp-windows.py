@@ -93,10 +93,3 @@ def removeConnection(name):
 createVPNConnection("cit-client", "test3", "test3", "192.168.197.3")
 time.sleep(30)
 removeConnection("cit-client")
-
-#Get Connection Status:
-#(Get-VpnConnection -Name test-emu).ConnectionStatus
-#Get Server IP Address:
-#(Get-VpnConnection -Name test-emu).ServerAddress
-#Get local IP Address:
-#(Get-NetIPAddress -InterfaceAlias cit-client).IPAddress

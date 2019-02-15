@@ -90,11 +90,10 @@ class PPTPConnectionWin(Connection):
             return False
         
     def getVPNServerIP(self):
-        #(Get-VpnConnection -Name test-emu).ServerAddress
         logging.debug("getVPNServerIP(): instantiated")
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
-        #powershell -WindowStyle Hidden (Get-VpnConnection -Name test-emu).ServerAddress
+        
         getServerCmd = "powershell -WindowStyle Hidden (Get-VpnConnection -Name "+self.connectionName+").ServerAddress"
         try:
             process = Popen(shlex.split(getServerCmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
