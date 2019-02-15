@@ -71,7 +71,7 @@ class PPTPConnectionWin(Connection):
             return False
     
     def getVPNLocalIP(self):
-        #(Get-NetIPAddress -InterfaceAlias emubox-client).IPAddress
+        #(Get-NetIPAddress -InterfaceAlias CIT-client).IPAddress
         logging.debug("getVPNLocalIP(): instantiated")
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
@@ -244,7 +244,7 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
 
-    conn = PPTPConnectionWin(connectionName = "emubox-client")
+    conn = PPTPConnectionWin(connectionName = "cit-client")
     serverIP = "192.168.197.3"
     username = "test3"
     password = "test3"

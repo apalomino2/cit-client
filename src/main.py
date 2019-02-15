@@ -21,7 +21,7 @@ class Application(Gtk.Application):
     def do_activate(self):
         Gtk.Application.do_activate(self)
         if not self.window:
-            self.window = AppWindow(application=self, title="Emubox Remote Client")
+            self.window = AppWindow(application=self, title="CIT Client")
         self.window.present()
         self.window.show_all()
 

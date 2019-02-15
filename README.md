@@ -1,4 +1,4 @@
-# Emubox Remote Client
+# CIT Client
 ## Installation
 
    Windows

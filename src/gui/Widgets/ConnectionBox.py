@@ -18,7 +18,7 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 
 class ConnectionBox(Gtk.ListBox):
 
-    CONNECTION_NAME = "emubox"
+    CONNECTION_NAME = "cit-client"
     
     def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()
@@ -34,7 +34,7 @@ class ConnectionBox(Gtk.ListBox):
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.row.add(self.hbox)
         self.connectionBoxDescLabel = Gtk.Label(xalign=0)
-        self.connectionBoxDescLabel.set_markup("<b>Emubox Connection</b>")
+        self.connectionBoxDescLabel.set_markup("<b>CIT Connection</b>")
         self.hbox.pack_start(self.connectionBoxDescLabel, True, True, 0)
         self.add(self.row)
 

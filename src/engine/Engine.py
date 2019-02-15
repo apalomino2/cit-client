@@ -169,7 +169,7 @@ class Engine:
         self.vmManage.suspendVM(vmName)
 
     def buildParser(self):
-        self.parser = argparse.ArgumentParser(description='Interface to the emubox-client service.')
+        self.parser = argparse.ArgumentParser(description='Interface to the CIT client service.')
         self.subParsers = self.parser.add_subparsers()
 
         self.engineParser = self.subParsers.add_parser('engine', help='retrieve overall engine status')
@@ -217,7 +217,7 @@ class Engine:
         self.vmRefreshParser = self.vmManageSubParsers.add_parser('refresh', help='retreive current vm information')
         self.vmRefreshParser.set_defaults(func=self.vmManageRefreshCmd)
 
-        self.vmConfigParser = self.vmManageSubParsers.add_parser('config', help='configure vm to connect to emubox')
+        self.vmConfigParser = self.vmManageSubParsers.add_parser('config', help='configure vm to connect to CIT')
         self.vmConfigParser.add_argument('vmName', metavar='<vm name>', action="store",
                                           help='name vm to configure')
         self.vmConfigParser.add_argument('srcIPAddress', metavar='<source ip address>', action="store",

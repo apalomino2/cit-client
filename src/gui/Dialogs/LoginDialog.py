@@ -23,7 +23,7 @@ class LoginDialog(Gtk.Dialog):
         self.set_default_size(150, 100)
         self.box_main = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=3)
 
-        self.label = Gtk.Label("Login to Emubox Server")
+        self.label = Gtk.Label("Login to CIT")
         self.box_main.pack_start(self.label, True, True, 0)
 
         self.box_spacer01 = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=3)
