@@ -18,7 +18,7 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 
 class ConnectionBox(Gtk.ListBox):
 
-    CONNECTION_NAME = "cit-client"
+    CONNECTION_NAME = "citclient"
     
     def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()

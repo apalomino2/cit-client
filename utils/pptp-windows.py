@@ -90,6 +90,6 @@ def removeConnection(name):
     removeConnProcess(name)
     print("VPN removed.")
 
-createVPNConnection("cit-client", "test3", "test3", "192.168.197.3")
+createVPNConnection("citclient", "test3", "test3", "192.168.197.3")
 time.sleep(30)
-removeConnection("cit-client")
+removeConnection("citclient")

@@ -243,7 +243,7 @@ if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)
     logging.debug("Starting Program")
 
-    conn = PPTPConnectionWin(connectionName = "cit-client")
+    conn = PPTPConnectionWin(connectionName = "citclient")
     serverIP = "192.168.197.3"
     username = "test3"
     password = "test3"
