@@ -215,6 +215,43 @@ class PPTPConnectionWin(Connection):
         self.localIPAddress = ""
         self.serverIPAddress = ""       
 
+    def refreshConnStatusProcess(self, cmd):
+        logging.debug("refreshConnStatusProcess(): instantiated")
+        startupinfo = subprocess.STARTUPINFO()
+        startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        if self.checkConnExists() == True:
+            try:
+                logging.debug("Starting process: " + str(cmd) + "\r\n")
+                outlog = ""
+                p = Popen(shlex.split(cmd, posix=self.POSIX), stdout=PIPE, stderr=PIPE, startupinfo=startupinfo)
+                while True:
+                    out = p.stdout.readline()
+                    if out == '' and p.poll() != None:
+                        break
+                    if out != '':
+                        logging.debug("refreshConnStatusProcess(): stdout Line: " + out)
+                        if "Connected" in out:
+                            self.refreshConnStatus = Connection.NOT_REFRESHING
+                            self.connStatus = Connection.CONNECTED
+                            return True
+                self.refreshConnStatus = Connection.NOT_REFRESHING
+                self.connStatus = Connection.NOT_CONNECTED
+                return False
+
+            except Exception as x:
+                logging.error(
+                    " disconnProcess(): Something went wrong while running process: " + str(cmd) + "\r\n" + str(x))
+                if p != None and p.poll() == None:
+                    p.terminate()
+                    #self.connStatus = Connection.NOT_CONNECTED
+                    self.refreshConnStatus = Connection.NOT_REFRESHING
+                    return False
+            logging.info("Process completed: " + cmd)
+        else:
+            self.refreshConnStatus = Connection.NOT_REFRESHING
+            self.connStatus = Connection.NOT_CONNECTED
+
+
     def connect(self, serverIP, username, password):
         logging.info("Using: " + username + "/" + password)
         logging.debug("Starting pptp connection thread")
@@ -234,10 +271,19 @@ class PPTPConnectionWin(Connection):
         t = threading.Thread(target=self.disconnProcess, args=(closeConnCmd,))
         t.start()
 
+    def refresh(self):
+        logging.debug( "refreshConnStatus(): instantiated")
+        self.refreshConnStatus = Connection.REFRESHING
+
+        refreshConnStatusCmd = "powershell -WindowStyle Hidden (Get-VpnConnection -Name "+self.connectionName+").ConnectionStatus"
+        #refreshConnStatusCmd = "powershell -WindowStyle Hidden rasdial"
+        t = threading.Thread(target=self.refreshConnStatusProcess, args=(refreshConnStatusCmd,))
+        t.start()
+
     def getStatus(self):
         logging.debug( "getStatus(): instantiated")
         #Don't want to rely on python objects in case we go with 3rd party clients in the future
-        return {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP, "localIP" : self.localIPAddress, "remoteIP" : self.remoteIPAddress}
+        return {"connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "refreshConnStatus" : self.refreshConnStatus, "connectionName" : self.connectionName, "serverIP" : self.serverIP, "localIP" : self.localIPAddress, "remoteIP" : self.remoteIPAddress}
 
 if __name__ == "__main__":
     logging.getLogger().setLevel(logging.DEBUG)

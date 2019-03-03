@@ -1,5 +1,5 @@
 import gi; gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 import logging
 from gui.Dialogs.LoginDialog import LoginDialog
 from gui.Dialogs.LoginConnectingDialog import LoginConnectingDialog
@@ -7,6 +7,9 @@ from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
 from gui.Widgets.VMManageBox import VMManageBox
 from engine.Engine import Engine
 from engine.Connection.Connection import Connection
+from time import sleep
+import threading
+
 import configparser
 import os
 
@@ -22,7 +25,9 @@ class ConnectionBox(Gtk.ListBox):
     
     def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()
-        
+
+        self.connect('delete_event', self.catchClosing)
+
         logging.debug("Creating ConnectionBox")
         self.parent = parent
         self.vmManageBox = vmManageBox
@@ -75,6 +80,12 @@ class ConnectionBox(Gtk.ListBox):
         self.row.add(self.hbox)
         self.add(self.row)
 
+        self.status = -1
+        self.QUIT_SIGNAL = False
+        t = threading.Thread(target=self.watchStatus)
+        t.start()
+
+
     def changeConnState(self, button):
         logging.debug("changeConnState(): initiated")
         logging.debug("changeConnState(): Button Label: " + button.get_label())
@@ -99,7 +110,6 @@ class ConnectionBox(Gtk.ListBox):
                     inputErrorDialog.destroy()
                     return
                 #process the input from the login dialog
-                #TODO: also remember for later
                 res = self.attemptLogin(serverIPText, usernameText, passwordText)
 
                 if res["connStatus"] == Connection.CONNECTED:
@@ -149,3 +159,49 @@ class ConnectionBox(Gtk.ListBox):
         s = disconnectingDialog.getFinalStatus()
         disconnectingDialog.destroy()
         return s
+
+    def watchStatus(self):
+        logging.debug("watchDisconnStatus(): instantiated")
+        #self.statusLabel.set_text("Checking connection")
+        e = Engine.getInstance()
+        #will check status every 1 second and will either display stopped or ongoing or connected
+        while(self.QUIT_SIGNAL == False):
+            logging.debug("watchDisconnStatus(): running: pptp forcerefreshconnstatus  " + ConnectionBox.CONNECTION_NAME)
+            self.status = e.execute("pptp forcerefreshconnstatus " + ConnectionBox.CONNECTION_NAME)
+            sleep(2)
+            logging.debug("watchDisconnStatus(): running: pptp status " + ConnectionBox.CONNECTION_NAME)
+            self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+            sleep(2)
+
+            logging.debug("watchConnStatus(): result: " + str(self.status))
+            if self.status == -1:
+                GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
+            elif self.status["refreshConnStatus"] == Connection.NOT_REFRESHING:
+                if self.status["connStatus"] == Connection.CONNECTED:
+                    GLib.idle_add(self.setGUIStatus, "Connected...", None, None)
+                elif self.status["connStatus"] == Connection.NOT_CONNECTED:
+                    GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
+                    #break
+            else:
+                GLib.idle_add(self.setGUIStatus, "Could not get status", False, True)
+                #break
+            sleep(5)
+
+    def catchClosing(self):
+        # self.QUIT_SIGNAL = True
+        # self.t.wait()
+        # return False
+
+    def setGUIStatus(self, msg, spin, buttonEnabled):
+        logging.debug("setGUIStatus(): instantiated: " + msg)
+    #    self.statusLabel.set_text(msg)
+    #     if spin != None:
+    #         if spin == True:
+    #             self.spinner.start()
+    #         else:
+    #             self.spinner.stop()
+    #     if buttonEnabled != None:
+    #         if buttonEnabled == True:
+    #             self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
+    #         else:
+    #             self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
