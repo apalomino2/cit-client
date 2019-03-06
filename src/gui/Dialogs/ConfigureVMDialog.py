@@ -72,7 +72,7 @@ class ConfigureVMDialog(Gtk.Dialog):
             adaptorNum = self.adaptorSelected[0]
             octetLocal = self.connection["localIP"].split(".")[3]
             #configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], self.connection["remoteIP"], octetLocal, adaptorNum, self.connName)
-            configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], "192.168.0.1", octetLocal, adaptorNum, self.connName)
+            configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], "10.0.0.1", octetLocal, adaptorNum, self.connName)
             configuringVMDialog.run()
             s = configuringVMDialog.getFinalData()
             configuringVMDialog.destroy()
