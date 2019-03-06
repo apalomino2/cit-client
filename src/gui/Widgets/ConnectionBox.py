@@ -26,7 +26,8 @@ class ConnectionBox(Gtk.ListBox):
     def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()
 
-        self.connect('delete_event', self.catchClosing)
+#        self.connect('delete_event', self.on_close_display)
+        self.connect('destroy', self.catchClosing)
 
         logging.debug("Creating ConnectionBox")
         self.parent = parent
@@ -81,10 +82,10 @@ class ConnectionBox(Gtk.ListBox):
         self.add(self.row)
 
         self.status = -1
-        self.QUIT_SIGNAL = False
-        t = threading.Thread(target=self.watchStatus)
-        t.start()
-
+        #self.QUIT_SIGNAL = False
+        self.QUIT_SIGNAL = threading.Event()
+        self.t = threading.Thread(target=self.watchStatus, args=(self.QUIT_SIGNAL, ))
+        self.t.start()
 
     def changeConnState(self, button):
         logging.debug("changeConnState(): initiated")
@@ -160,37 +161,53 @@ class ConnectionBox(Gtk.ListBox):
         disconnectingDialog.destroy()
         return s
 
-    def watchStatus(self):
+    def watchStatus(self, control):
         logging.debug("watchDisconnStatus(): instantiated")
         #self.statusLabel.set_text("Checking connection")
         e = Engine.getInstance()
         #will check status every 1 second and will either display stopped or ongoing or connected
-        while(self.QUIT_SIGNAL == False):
-            logging.debug("watchDisconnStatus(): running: pptp forcerefreshconnstatus  " + ConnectionBox.CONNECTION_NAME)
-            self.status = e.execute("pptp forcerefreshconnstatus " + ConnectionBox.CONNECTION_NAME)
-            sleep(2)
+        #while(self.QUIT_SIGNAL == False):
+        while not control.is_set():
             logging.debug("watchDisconnStatus(): running: pptp status " + ConnectionBox.CONNECTION_NAME)
             self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
-            sleep(2)
+            #connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "refreshConnStatus
+            if self.status != -1 and self.status["connStatus"] != Connection.CONNECTING and self.status["disConnStatus"] != Connection.DISCONNECTING and self.status["refreshConnStatus"] != Connection.REFRESHING:
+                logging.debug("watchDisconnStatus(): running: pptp forcerefreshconnstatus  " + ConnectionBox.CONNECTION_NAME)
+                self.status = e.execute("pptp forcerefreshconnstatus " + ConnectionBox.CONNECTION_NAME)
+                #wait until it's done refreshing
+                self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+                while self.status["refreshConnStatus"] == Connection.REFRESHING:
+                    sleep(2)
+                    self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+                #read the new state
+                logging.debug("watchDisconnStatus(): running: pptp status " + ConnectionBox.CONNECTION_NAME)
+                self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
 
-            logging.debug("watchConnStatus(): result: " + str(self.status))
-            if self.status == -1:
-                GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
-            elif self.status["refreshConnStatus"] == Connection.NOT_REFRESHING:
-                if self.status["connStatus"] == Connection.CONNECTED:
-                    GLib.idle_add(self.setGUIStatus, "Connected...", None, None)
+                logging.debug("watchStatus(): result: " + str(self.status))
+                if self.status == -1:
+                    GLib.idle_add(self.setGUIStatus, "No connection yet exists", False, True)
                 elif self.status["connStatus"] == Connection.NOT_CONNECTED:
                     GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
+                elif self.status["connStatus"] == Connection.CONNECTED:
+                    GLib.idle_add(self.setGUIStatus, "Connected...", None, None)
                     #break
-            else:
-                GLib.idle_add(self.setGUIStatus, "Could not get status", False, True)
+                else:
+                    GLib.idle_add(self.setGUIStatus, "Could not get status: " + str(self.status), False, True)
                 #break
             sleep(5)
 
-    def catchClosing(self):
-        # self.QUIT_SIGNAL = True
-        # self.t.wait()
-        # return False
+    def catchClosing(self, widget=None):
+        logging.debug("ConnectionBox : catchClosing(): instantiated")
+        logging.debug("ConnectionBox : connection status killing thread")
+        if(self.t.isAlive()):
+            self.QUIT_SIGNAL.set()
+            self.t.join()
+        return False
+
+    #__gsignal__ = {"delete-event": "overide"}
+    #def on_close_display(self, event, widget):
+    #    self.catchClosing()
+    #    return True
 
     def setGUIStatus(self, msg, spin, buttonEnabled):
         logging.debug("setGUIStatus(): instantiated: " + msg)

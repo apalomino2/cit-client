@@ -12,6 +12,7 @@ from VM import VM
 import re
 
 class VBoxManageWin(VMManage):
+    #TODO: read from config file
     VBOX_PATH = "C:\\Program Files\\Oracle\\VirtualBox\\VBoxManage.exe"
     
     def __init__(self):
