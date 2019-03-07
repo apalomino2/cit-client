@@ -21,7 +21,7 @@ class ConfigurationFile():
             self.config['SERVER']['USERNAME'] = ""
             self.config['SERVER']['INTERNAL_IP'] = "10.0.0.1"
 
-            self.config['VBOX_WIN']['VBOX_PATH'] = "C:\Program Files\Oracle\VBoxManage.exe"
+            self.config['VBOX_WIN']['VBOX_PATH'] = "C:\Program Files\Oracle\VirtualBox\VBoxManage.exe"
             self.config['VBOX_LINUX']['VBOX_PATH'] = "VBoxManage"
 
     def getConfig(self):
