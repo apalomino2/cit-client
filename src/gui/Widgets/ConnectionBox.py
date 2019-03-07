@@ -1,5 +1,5 @@
 import gi; gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, Gdk
+from gi.repository import Gtk, Gdk, GLib
 import logging
 from gui.Dialogs.LoginDialog import LoginDialog
 from gui.Dialogs.LoginConnectingDialog import LoginConnectingDialog
@@ -7,6 +7,10 @@ from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
 from gui.Widgets.VMManageBox import VMManageBox
 from engine.Engine import Engine
 from engine.Connection.Connection import Connection
+from time import sleep
+import threading
+
+
 import configparser
 import os
 
@@ -19,14 +23,16 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 class ConnectionBox(Gtk.ListBox):
 
     CONNECTION_NAME = "citclient"
-    
+
     def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()
-        
+
+        self.connect('destroy', self.catchClosing)
+
         logging.debug("Creating ConnectionBox")
         self.parent = parent
         self.vmManageBox = vmManageBox
-        
+
         self.set_selection_mode(Gtk.SelectionMode.NONE)
         self.set_border_width(10)
 
@@ -54,7 +60,7 @@ class ConnectionBox(Gtk.ListBox):
         self.connectionButton.props.valign = Gtk.Align.CENTER
         self.hbox.pack_start(self.connectionButton, False, True, 0)
         self.add(self.row)
-        
+
         self.vmManageBox.set_sensitive(False)
 
         self.row = Gtk.ListBoxRow()
@@ -75,6 +81,12 @@ class ConnectionBox(Gtk.ListBox):
         self.row.add(self.hbox)
         self.add(self.row)
 
+        self.status = -1
+        #self.QUIT_SIGNAL = False
+        self.QUIT_SIGNAL = threading.Event()
+        self.t = threading.Thread(target=self.watchStatus, args=(self.QUIT_SIGNAL, ))
+        self.t.start()
+
     def changeConnState(self, button):
         logging.debug("changeConnState(): initiated")
         logging.debug("changeConnState(): Button Label: " + button.get_label())
@@ -87,9 +99,9 @@ class ConnectionBox(Gtk.ListBox):
             usernameText = loginDialog.getUsernameText()
             passwordText = loginDialog.getPasswordText()
             #close the dialog
-            loginDialog.destroy()                
+            loginDialog.destroy()
             #try to connect using supplied credentials
-            if response == Gtk.ResponseType.OK:		
+            if response == Gtk.ResponseType.OK:
                 #check if the input was filled
                 if serverIPText.strip() == "" or usernameText.strip() == "" or passwordText.strip() == "":
                     logging.error("Parameter was empty!")
@@ -99,7 +111,6 @@ class ConnectionBox(Gtk.ListBox):
                     inputErrorDialog.destroy()
                     return
                 #process the input from the login dialog
-                #TODO: also remember for later
                 res = self.attemptLogin(serverIPText, usernameText, passwordText)
 
                 if res["connStatus"] == Connection.CONNECTED:
@@ -111,7 +122,7 @@ class ConnectionBox(Gtk.ListBox):
                     if self.vmManageBox.vmStatusLabel.get_text() == " Configured ":
                         self.vmManageBox.startVMButton.set_sensitive(True)
                         self.vmManageBox.suspendVMButton.set_sensitive(True)
-    
+
             elif response == Gtk.ResponseType.CANCEL:
                 #just clear out the dialog
                 loginDialog.clearEntries()
@@ -127,7 +138,7 @@ class ConnectionBox(Gtk.ListBox):
                 self.vmManageBox.set_sensitive(False)
                 self.vmManageBox.startVMButton.set_sensitive(False)
                 self.vmManageBox.suspendVMButton.set_sensitive(False)
-    
+
     def attemptLogin(self, serverIP, username, password):
         logging.debug("attemptLogin(): initiated")
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
@@ -138,7 +149,7 @@ class ConnectionBox(Gtk.ListBox):
         s = loginConnectingDialog.getFinalStatus()
         loginConnectingDialog.destroy()
         return s
-        
+
     def attemptDisconnect(self):
         logging.debug("attemptDisconnect(): initiated")
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
@@ -149,3 +160,66 @@ class ConnectionBox(Gtk.ListBox):
         s = disconnectingDialog.getFinalStatus()
         disconnectingDialog.destroy()
         return s
+
+    def watchStatus(self, control):
+        logging.debug("watchDisconnStatus(): instantiated")
+        #self.statusLabel.set_text("Checking connection")
+        e = Engine.getInstance()
+        #will check status every 1 second and will either display stopped or ongoing or connected
+        #while(self.QUIT_SIGNAL == False):
+        while not control.is_set():
+            logging.debug("watchDisconnStatus(): running: pptp status " + ConnectionBox.CONNECTION_NAME)
+            self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+            #connStatus" : self.connStatus, "disConnStatus" : self.disConnStatus, "refreshConnStatus
+            if self.status != -1 and self.status["connStatus"] != Connection.CONNECTING and self.status["disConnStatus"] != Connection.DISCONNECTING and self.status["refreshConnStatus"] != Connection.REFRESHING:
+                logging.debug("watchDisconnStatus(): running: pptp forcerefreshconnstatus  " + ConnectionBox.CONNECTION_NAME)
+                self.status = e.execute("pptp forcerefreshconnstatus " + ConnectionBox.CONNECTION_NAME)
+                #wait until it's done refreshing
+                self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+                while self.status["refreshConnStatus"] == Connection.REFRESHING:
+                    sleep(2)
+                    self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+                #read the new state
+                logging.debug("watchDisconnStatus(): running: pptp status " + ConnectionBox.CONNECTION_NAME)
+                self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
+
+                logging.debug("watchStatus(): result: " + str(self.status))
+                if self.status["connStatus"] == Connection.NOT_CONNECTED or self.status["connStatus"] == Connection.CONNECTED:
+                    GLib.idle_add(self.setGUIStatus, self.status)
+                    #break
+                else:
+                    logging.debug("watchStatus(): Could not get status: " + str(self.status))
+                #break
+            sleep(5)
+
+    def catchClosing(self, widget=None):
+        logging.debug("ConnectionBox : catchClosing(): instantiated")
+        logging.debug("ConnectionBox : connection status killing thread")
+        if(self.t.isAlive()):
+            self.QUIT_SIGNAL.set()
+            self.t.join()
+        return False
+
+    #__gsignal__ = {"delete-event": "overide"}
+    #def on_close_display(self, event, widget):
+    #    self.catchClosing()
+    #    return True
+
+    def setGUIStatus(self, res):
+        logging.debug("setGUIStatus(): instantiated: " + str(res))
+        if res["connStatus"] == Connection.CONNECTED:
+            self.connectionButton.set_label("Disconnect")
+            self.connStatusLabel.set_label(" Connected ")
+            self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
+            self.vmManageBox.setConnectionObject(res)
+            self.vmManageBox.set_sensitive(True)
+            if self.vmManageBox.vmStatusLabel.get_text() == " Configured ":
+                self.vmManageBox.startVMButton.set_sensitive(True)
+                self.vmManageBox.suspendVMButton.set_sensitive(True)
+        if res["connStatus"] == Connection.NOT_CONNECTED:
+            self.connectionButton.set_label("Connect")
+            self.connStatusLabel.set_label(" Disconnected ")
+            self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
+            self.vmManageBox.set_sensitive(False)
+            self.vmManageBox.startVMButton.set_sensitive(False)
+            self.vmManageBox.suspendVMButton.set_sensitive(False)
