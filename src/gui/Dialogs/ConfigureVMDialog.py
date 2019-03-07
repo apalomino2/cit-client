@@ -47,7 +47,12 @@ class ConfigureVMDialog(Gtk.Dialog):
         s = vmRetrieveDialog.getFinalData()
         self.vms = s["mgrStatus"]["vmstatus"]
         vmRetrieveDialog.destroy()
-        
+        logging.error("No VMs were retrieved")
+        if len(self.vms) == 0:
+            noVMsDialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.WARNING,
+            Gtk.ButtonsType.OK, "No VMs were found. If you think this is incorrect, please check the path to VBoxManage in config/config.ini and then restart the program.")
+            noVMsDialog.run()
+            noVMsDialog.destroy()
         treeWidget.populateTreeStore(self.vms)
         
     def onItemSelected(self, selection):
