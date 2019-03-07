@@ -5,6 +5,7 @@ from gui.Widgets.VMTreeWidget import VMTreeWidget
 from gui.Dialogs.VMRetrieveDialog import VMRetrieveDialog
 from gui.Dialogs.ConfiguringVMDialog import ConfiguringVMDialog
 from engine.Engine import Engine
+from engine.Configuration.ConfigurationFile import ConfigurationFile
 import logging
 
 class ConfigureVMDialog(Gtk.Dialog):
@@ -13,6 +14,9 @@ class ConfigureVMDialog(Gtk.Dialog):
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
              Gtk.STOCK_OK, Gtk.ResponseType.OK))
         self.connName = "citclient"
+        self.cf = ConfigurationFile()
+        self.serverIntIP = self.cf.getConfig()['SERVER']['INTERNAL_IP']
+
         self.connection = connection
         self.vms = {}
         self.vmName = ""
@@ -73,7 +77,7 @@ class ConfigureVMDialog(Gtk.Dialog):
             octetLocal = self.connection["localIP"].split(".")[3]
             #configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], self.connection["remoteIP"], octetLocal, adaptorNum, self.connName)
             #TODO: get IP from a config file
-            configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], "10.0.0.1", octetLocal, adaptorNum, self.connName)
+            configuringVMDialog = ConfiguringVMDialog(self, self.vmName, self.connection["localIP"], self.serverIntIP, octetLocal, adaptorNum, self.connName)
             configuringVMDialog.run()
             s = configuringVMDialog.getFinalData()
             configuringVMDialog.destroy()
