@@ -10,6 +10,7 @@ from engine.Connection.Connection import Connection
 from time import sleep
 import threading
 
+
 import configparser
 import os
 
@@ -22,17 +23,16 @@ class ListBoxRowWithData(Gtk.ListBoxRow):
 class ConnectionBox(Gtk.ListBox):
 
     CONNECTION_NAME = "citclient"
-    
+
     def __init__(self, parent, vmManageBox):
         super(ConnectionBox, self).__init__()
 
-#        self.connect('delete_event', self.on_close_display)
         self.connect('destroy', self.catchClosing)
 
         logging.debug("Creating ConnectionBox")
         self.parent = parent
         self.vmManageBox = vmManageBox
-        
+
         self.set_selection_mode(Gtk.SelectionMode.NONE)
         self.set_border_width(10)
 
@@ -60,7 +60,7 @@ class ConnectionBox(Gtk.ListBox):
         self.connectionButton.props.valign = Gtk.Align.CENTER
         self.hbox.pack_start(self.connectionButton, False, True, 0)
         self.add(self.row)
-        
+
         self.vmManageBox.set_sensitive(False)
 
         self.row = Gtk.ListBoxRow()
@@ -99,9 +99,9 @@ class ConnectionBox(Gtk.ListBox):
             usernameText = loginDialog.getUsernameText()
             passwordText = loginDialog.getPasswordText()
             #close the dialog
-            loginDialog.destroy()                
+            loginDialog.destroy()
             #try to connect using supplied credentials
-            if response == Gtk.ResponseType.OK:		
+            if response == Gtk.ResponseType.OK:
                 #check if the input was filled
                 if serverIPText.strip() == "" or usernameText.strip() == "" or passwordText.strip() == "":
                     logging.error("Parameter was empty!")
@@ -122,7 +122,7 @@ class ConnectionBox(Gtk.ListBox):
                     if self.vmManageBox.vmStatusLabel.get_text() == " Configured ":
                         self.vmManageBox.startVMButton.set_sensitive(True)
                         self.vmManageBox.suspendVMButton.set_sensitive(True)
-    
+
             elif response == Gtk.ResponseType.CANCEL:
                 #just clear out the dialog
                 loginDialog.clearEntries()
@@ -138,7 +138,7 @@ class ConnectionBox(Gtk.ListBox):
                 self.vmManageBox.set_sensitive(False)
                 self.vmManageBox.startVMButton.set_sensitive(False)
                 self.vmManageBox.suspendVMButton.set_sensitive(False)
-    
+
     def attemptLogin(self, serverIP, username, password):
         logging.debug("attemptLogin(): initiated")
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
@@ -149,7 +149,7 @@ class ConnectionBox(Gtk.ListBox):
         s = loginConnectingDialog.getFinalStatus()
         loginConnectingDialog.destroy()
         return s
-        
+
     def attemptDisconnect(self):
         logging.debug("attemptDisconnect(): initiated")
         #need to create a thread (probably a dialog box with disabled ok button until connection either times out (5 seconds), connection good
@@ -184,15 +184,11 @@ class ConnectionBox(Gtk.ListBox):
                 self.status = e.execute("pptp status " + ConnectionBox.CONNECTION_NAME)
 
                 logging.debug("watchStatus(): result: " + str(self.status))
-                if self.status == -1:
-                    GLib.idle_add(self.setGUIStatus, "No connection yet exists", False, True)
-                elif self.status["connStatus"] == Connection.NOT_CONNECTED:
-                    GLib.idle_add(self.setGUIStatus, "Connection Disconnected.", False, True)
-                elif self.status["connStatus"] == Connection.CONNECTED:
-                    GLib.idle_add(self.setGUIStatus, "Connected...", None, None)
+                if self.status["connStatus"] == Connection.NOT_CONNECTED or self.status["connStatus"] == Connection.CONNECTED:
+                    GLib.idle_add(self.setGUIStatus, self.status)
                     #break
                 else:
-                    GLib.idle_add(self.setGUIStatus, "Could not get status: " + str(self.status), False, True)
+                    logging.debug("watchStatus(): Could not get status: " + str(self.status))
                 #break
             sleep(5)
 
@@ -209,16 +205,21 @@ class ConnectionBox(Gtk.ListBox):
     #    self.catchClosing()
     #    return True
 
-    def setGUIStatus(self, msg, spin, buttonEnabled):
-        logging.debug("setGUIStatus(): instantiated: " + msg)
-    #    self.statusLabel.set_text(msg)
-    #     if spin != None:
-    #         if spin == True:
-    #             self.spinner.start()
-    #         else:
-    #             self.spinner.stop()
-    #     if buttonEnabled != None:
-    #         if buttonEnabled == True:
-    #             self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(True)
-    #         else:
-    #             self.get_widget_for_response(Gtk.ResponseType.OK).set_sensitive(False)
+    def setGUIStatus(self, res):
+        logging.debug("setGUIStatus(): instantiated: " + str(res))
+        if res["connStatus"] == Connection.CONNECTED:
+            self.connectionButton.set_label("Disconnect")
+            self.connStatusLabel.set_label(" Connected ")
+            self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
+            self.vmManageBox.setConnectionObject(res)
+            self.vmManageBox.set_sensitive(True)
+            if self.vmManageBox.vmStatusLabel.get_text() == " Configured ":
+                self.vmManageBox.startVMButton.set_sensitive(True)
+                self.vmManageBox.suspendVMButton.set_sensitive(True)
+        if res["connStatus"] == Connection.NOT_CONNECTED:
+            self.connectionButton.set_label("Connect")
+            self.connStatusLabel.set_label(" Disconnected ")
+            self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(1, 0, 0, .5))
+            self.vmManageBox.set_sensitive(False)
+            self.vmManageBox.startVMButton.set_sensitive(False)
+            self.vmManageBox.suspendVMButton.set_sensitive(False)
