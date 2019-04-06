@@ -14,6 +14,15 @@ import threading
 import configparser
 import os
 
+
+# Additions for CIT
+import subprocess
+import sys
+import re
+import getpass
+import pwd
+
+
 class ListBoxRowWithData(Gtk.ListBoxRow):
     def __init__(self, data):
         super(Gtk.ListBoxRow, self).__init__()
@@ -91,6 +100,18 @@ class ConnectionBox(Gtk.ListBox):
         logging.debug("changeConnState(): initiated")
         logging.debug("changeConnState(): Button Label: " + button.get_label())
         if button.get_label() == "Connect":
+            """
+                ===============================================================================
+                                                TEST
+                ===============================================================================
+            """
+            # user = getpass.getuser()
+            # command = 'python -m webbrowser -n 127.108.7.29:8085'
+            # if sys.platform == 'linux':
+            #     subprocess.call("su - " + str(user) + " -c '" + command + "'", shell=True)
+            # elif sys.platform == 'win32':
+            #     subprocess.call("runas /noprofile /user:" + user + command, shell=True)
+
             #start the login dialog
             loginDialog = LoginDialog(self.parent)
             response = loginDialog.run()
@@ -114,8 +135,27 @@ class ConnectionBox(Gtk.ListBox):
                 res = self.attemptLogin(serverIPText, usernameText, passwordText)
 
                 if res["connStatus"] == Connection.CONNECTED:
+                    """
+                        ===============================================================================
+                                                    OPEN BROWSER WITH CIT
+                        ===============================================================================
+                    """
+                    command = 'python -m webbrowser -n http://129.108.7.29:8085'
+                    if re.match('linux', sys.platform):
+                        for p in pwd.getpwall():
+                            if p[3] >= 999 and re.match('/home', p[5]):
+                                user = p[0]
+                                break
+                        subprocess.call("su - " + user + " -c '" + command + "'", shell=True)
+                    elif re.match('win32', sys.platform):
+                        user = getpass.getuser()
+                        logging.debug("open browser for: " + user)
+                        subprocess.call("runas /noprofile /user:" + user + command, shell=True)
+
                     button.set_label("Disconnect")
-                    self.connStatusLabel.set_label(" Connected ")
+                    self.connStatusLabel.set_label("Connected. \n"
+                                                   "CIT will launch automatically.\n"
+                                                   "CIT URL: 127.108.7.29:8085")
                     self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
                     self.vmManageBox.setConnectionObject(res)
                     self.vmManageBox.set_sensitive(True)
