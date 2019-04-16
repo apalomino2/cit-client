@@ -4,6 +4,7 @@ import logging
 from gui.Dialogs.LoginDialog import LoginDialog
 from gui.Dialogs.LoginConnectingDialog import LoginConnectingDialog
 from gui.Dialogs.DisconnectingDialog import DisconnectingDialog
+from gui.Dialogs.LaunchCITDialog import LaunchCITDialog
 from gui.Widgets.VMManageBox import VMManageBox
 from engine.Engine import Engine
 from engine.Connection.Connection import Connection
@@ -88,30 +89,73 @@ class ConnectionBox(Gtk.ListBox):
         self.row = Gtk.ListBoxRow()
         self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
         self.row.add(self.hbox)
+        self.citLauchLabel = Gtk.Label(xalign=0)
+        self.citLauchLabel.set_markup("Open CIT with default browser: ")
+        self.hbox.pack_start(self.citLauchLabel, True, True, 0)
+        self.citLaunchButton = Gtk.Button("Launch CIT")
+        self.citLaunchButton.connect("clicked", self.openCITTab)
+        self.citLaunchButton.props.valign = Gtk.Align.CENTER
+        self.hbox.pack_start(self.citLaunchButton, False, True, 0)
+        self.add(self.row)
+
+        self.citLauchLabel.set_sensitive(False)
+        self.citLaunchButton.set_sensitive(False)
+
+        self.row = Gtk.ListBoxRow()
+        self.hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL, spacing=50)
+        self.row.add(self.hbox)
         self.add(self.row)
 
         self.status = -1
-        #self.QUIT_SIGNAL = False
+        # self.QUIT_SIGNAL = False
         self.QUIT_SIGNAL = threading.Event()
         self.t = threading.Thread(target=self.watchStatus, args=(self.QUIT_SIGNAL, ))
         self.t.start()
+
+    def openCITTab(self, button):
+        logging.debug("openCITTab(): initiated")
+        if button.get_label() != "Launch CIT":
+            return
+
+        command = "python -m webbrowser -n http://" + self.serverIPText + ":5001"
+        if re.match('linux', sys.platform):
+            for p in pwd.getpwall():
+                if p[3] >= 999 and re.match('/home', p[5]):
+                    user = p[0]
+                    break
+            process = subprocess.Popen(["su","-", user, "-c", command])
+        elif re.match('win32', sys.platform):
+            user = getpass.getuser()
+            logging.debug("open browser for: " + user)
+            process = subprocess.Popen("runas /noprofile /user:" + user + command)
+        else:
+            process = None
+
+        logging.debug("openCITTab(): launching dialog")
+        launchDialog = LaunchCITDialog(self.parent, process)
+        launchDialog.run()
+        retVal = process.poll()
+        while retVal is None:
+            logging.debug("watchLaunchStatus(): polling launch process")
+            logging.debug("watchLaunchStatus(): retVal: " + str(retVal))
+            if retVal is None:
+                launchDialog.setGUIStatus("Attempting Launch...", True, False)
+                logging.debug("watchLaunchStatus(): process running")
+            elif retVal == 0:
+                launchDialog.setGUIStatus("Launch successful.", False, True)
+                logging.debug("watchLaunchStatus(): browser launch success")
+            else:
+                launchDialog.setGUIStatus("Launch failed.", False, True)
+                logging.debug("watchLaunchStatus(): browser launch failure")
+            sleep(1)
+            retVal = process.poll()
+        launchDialog.destroy()
+        logging.debug("openCITTab(): ended")
 
     def changeConnState(self, button):
         logging.debug("changeConnState(): initiated")
         logging.debug("changeConnState(): Button Label: " + button.get_label())
         if button.get_label() == "Connect":
-            """
-                ===============================================================================
-                                                TEST
-                ===============================================================================
-            """
-            # user = getpass.getuser()
-            # command = 'python -m webbrowser -n 127.108.7.29:8085'
-            # if sys.platform == 'linux':
-            #     subprocess.call("su - " + str(user) + " -c '" + command + "'", shell=True)
-            # elif sys.platform == 'win32':
-            #     subprocess.call("runas /noprofile /user:" + user + command, shell=True)
-
             #start the login dialog
             loginDialog = LoginDialog(self.parent)
             response = loginDialog.run()
@@ -121,6 +165,8 @@ class ConnectionBox(Gtk.ListBox):
             passwordText = loginDialog.getPasswordText()
             #close the dialog
             loginDialog.destroy()
+            # save the ip to open browser later
+            self.serverIPText = serverIPText
             #try to connect using supplied credentials
             if response == Gtk.ResponseType.OK:
                 #check if the input was filled
@@ -135,33 +181,17 @@ class ConnectionBox(Gtk.ListBox):
                 res = self.attemptLogin(serverIPText, usernameText, passwordText)
 
                 if res["connStatus"] == Connection.CONNECTED:
-                    """
-                        ===============================================================================
-                                                    OPEN BROWSER WITH CIT
-                        ===============================================================================
-                    """
-                    command = 'python -m webbrowser -n http://129.108.7.29:8085'
-                    if re.match('linux', sys.platform):
-                        for p in pwd.getpwall():
-                            if p[3] >= 999 and re.match('/home', p[5]):
-                                user = p[0]
-                                break
-                        subprocess.call("su - " + user + " -c '" + command + "'", shell=True)
-                    elif re.match('win32', sys.platform):
-                        user = getpass.getuser()
-                        logging.debug("open browser for: " + user)
-                        subprocess.call("runas /noprofile /user:" + user + command, shell=True)
-
                     button.set_label("Disconnect")
-                    self.connStatusLabel.set_label("Connected. \n"
-                                                   "CIT will launch automatically.\n"
-                                                   "CIT URL: 127.108.7.29:8085")
+                    self.connStatusLabel.set_label("Connected.")
                     self.connEventBox.override_background_color(Gtk.StateType.NORMAL, Gdk.RGBA(0, 1, 0, .5))
                     self.vmManageBox.setConnectionObject(res)
                     self.vmManageBox.set_sensitive(True)
+                    self.citLaunchButton.set_sensitive(True)
+                    self.citLauchLabel.set_sensitive(True)
                     if self.vmManageBox.vmStatusLabel.get_text() == " Configured ":
                         self.vmManageBox.startVMButton.set_sensitive(True)
                         self.vmManageBox.suspendVMButton.set_sensitive(True)
+
 
             elif response == Gtk.ResponseType.CANCEL:
                 #just clear out the dialog
@@ -178,6 +208,9 @@ class ConnectionBox(Gtk.ListBox):
                 self.vmManageBox.set_sensitive(False)
                 self.vmManageBox.startVMButton.set_sensitive(False)
                 self.vmManageBox.suspendVMButton.set_sensitive(False)
+                self.citLaunchButton.set_sensitive(False)
+                self.citLauchLabel.set_sensitive(False)
+
 
     def attemptLogin(self, serverIP, username, password):
         logging.debug("attemptLogin(): initiated")
